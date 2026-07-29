@@ -12,7 +12,7 @@ export function ProgramsSection({ programs }: { programs: Program[] }) {
       <SectionHeader
         eyebrow="مسارات تعليمية"
         title="برامجنا العلمية"
-        description="مسارات متدرجة من المبتدئ إلى المتقدم في العلوم الشرعية"
+        description="مسارات متدرجة من التأسيس إلى التخصص في القرآن والسنة والفقه والعقيدة"
       />
       <Container>
         <StaggerContainer className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">

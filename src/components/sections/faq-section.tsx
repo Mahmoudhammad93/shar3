@@ -10,7 +10,10 @@ import { FadeIn } from "@/components/motion/fade-in";
 export function FaqSection({ faqs }: { faqs: Faq[] }) {
   return (
     <Section>
-      <SectionHeader title="الأسئلة الشائعة" description="إجابات على أكثر الأسئلة شيوعاً" />
+      <SectionHeader
+        title="الأسئلة الشائعة"
+        description="إجابات عن التسجيل والبرامج الشرعية وطريقة الدراسة في المعهد"
+      />
       <Container className="max-w-3xl">
         <div className="space-y-3">
           {faqs.map((faq, i) => (

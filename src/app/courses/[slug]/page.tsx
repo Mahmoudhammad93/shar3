@@ -1,17 +1,44 @@
 import { notFound } from "next/navigation";
+import type { Metadata } from "next";
 import { SiteLayout } from "@/components/layout/site-layout";
 import { EnrollmentForm } from "@/components/forms/enrollment-form";
 import { PageHero } from "@/components/sections/page-hero";
+import { JsonLd } from "@/components/seo/json-ld";
 import { Container } from "@/components/ui/container";
 import { Badge, CurriculumAccordion, VideoPlayer } from "@/components/ui";
 import { CourseThumbnail } from "@/components/ui/course-thumbnail";
 import { Card, CardContent } from "@/components/ui/card";
 import { api } from "@/lib/api";
 import { getCourseSlugs } from "@/lib/static-params";
+import { breadcrumbJsonLd, buildMetadata, courseJsonLd, SITE } from "@/lib/seo";
 
 export async function generateStaticParams() {
   const slugs = await getCourseSlugs();
   return slugs.map((slug) => ({ slug }));
+}
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}): Promise<Metadata> {
+  const { slug } = await params;
+
+  try {
+    const { data: course } = await api.getCourse(slug);
+    const description =
+      course.description_ar ||
+      `دورة ${course.title_ar} في معهد علم شرعي — تعليم شرعي على منهج أهل السنة والجماعة.`;
+
+    return buildMetadata({
+      title: course.title_ar,
+      description,
+      path: `/courses/${slug}/`,
+      image: course.image,
+    });
+  } catch {
+    return buildMetadata({ title: "دورة شرعية", path: `/courses/${slug}/` });
+  }
 }
 
 export default async function CourseDetailPage({ params }: { params: Promise<{ slug: string }> }) {
@@ -23,6 +50,16 @@ export default async function CourseDetailPage({ params }: { params: Promise<{ s
 
     return (
       <SiteLayout>
+        <JsonLd
+          data={[
+            courseJsonLd(course),
+            breadcrumbJsonLd([
+              { name: SITE.name, path: "/" },
+              { name: "الدورات الشرعية", path: "/courses/" },
+              { name: course.title_ar, path: `/courses/${slug}/` },
+            ]),
+          ]}
+        />
         <PageHero title={course.title_ar} subtitle={course.description_ar}>
           <div className="mt-4 flex flex-wrap justify-center gap-2">
             {course.category && <Badge variant="gold">{course.category.name_ar}</Badge>}

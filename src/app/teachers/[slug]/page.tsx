@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowRight, User } from "lucide-react";
 import { SiteLayout } from "@/components/layout/site-layout";
@@ -7,10 +8,35 @@ import { PageHero } from "@/components/sections/page-hero";
 import { Container } from "@/components/ui/container";
 import { api } from "@/lib/api";
 import { getTeacherSlugs } from "@/lib/static-params";
+import { buildMetadata } from "@/lib/seo";
 
 export async function generateStaticParams() {
   const slugs = await getTeacherSlugs();
   return slugs.map((slug) => ({ slug }));
+}
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}): Promise<Metadata> {
+  const { slug } = await params;
+
+  try {
+    const { data: teacher } = await api.getTeacher(slug);
+    const description =
+      teacher.bio_ar ||
+      `${teacher.name_ar}${teacher.title_ar ? ` — ${teacher.title_ar}` : ""} — معلم في معهد علم شرعي، متخصص في العلوم الشرعية.`;
+
+    return buildMetadata({
+      title: teacher.name_ar,
+      description,
+      path: `/teachers/${slug}/`,
+      image: teacher.photo,
+    });
+  } catch {
+    return buildMetadata({ title: "المعلمون", path: `/teachers/${slug}/` });
+  }
 }
 
 export default async function TeacherDetailPage({ params }: { params: Promise<{ slug: string }> }) {

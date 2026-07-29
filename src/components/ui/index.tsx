@@ -2,6 +2,7 @@ export { Button, buttonVariants } from "./button";
 export { Badge } from "./badge";
 export { Card, CardContent, CardHeader, CardFooter } from "./card";
 export { Input, Textarea } from "./input";
+export { PasswordInput } from "./password-input";
 export { Container } from "./container";
 export { Section, SectionHeader } from "./section";
 export { Eyebrow, SectionHeading, SectionDescription, PageTitle } from "./typography";

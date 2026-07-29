@@ -9,7 +9,11 @@ import { StaggerContainer, StaggerItem } from "@/components/motion/fade-in";
 export function TeachersSection({ teachers }: { teachers: Teacher[] }) {
   return (
     <Section>
-      <SectionHeader eyebrow="الهيئة التعليمية" title="نخبة من العلماء والمدرسين" />
+      <SectionHeader
+        eyebrow="الهيئة التعليمية"
+        title="نخبة من العلماء والمدرسين"
+        description="مدرسون متخصصون في العلوم الشرعية يربطون الطالب بالقرآن والسنة على فهم السلف"
+      />
       <Container>
         <StaggerContainer className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {teachers.map((teacher) => (

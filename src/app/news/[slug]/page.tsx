@@ -1,14 +1,38 @@
 import { notFound } from "next/navigation";
+import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowRight, Calendar } from "lucide-react";
 import { SiteLayout } from "@/components/layout/site-layout";
 import { Container } from "@/components/ui/container";
 import { api } from "@/lib/api";
 import { getAnnouncementSlugs } from "@/lib/static-params";
+import { buildMetadata } from "@/lib/seo";
 
 export async function generateStaticParams() {
   const slugs = await getAnnouncementSlugs();
   return slugs.map((slug) => ({ slug }));
+}
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}): Promise<Metadata> {
+  const { slug } = await params;
+
+  try {
+    const { data: announcement } = await api.getAnnouncement(slug);
+    const plainContent = announcement.content_ar?.replace(/<[^>]+>/g, " ").slice(0, 160);
+
+    return buildMetadata({
+      title: announcement.title_ar,
+      description: plainContent || `إعلان من معهد علم شرعي: ${announcement.title_ar}`,
+      path: `/news/${slug}/`,
+      type: "article",
+    });
+  } catch {
+    return buildMetadata({ title: "خبر", path: `/news/${slug}/` });
+  }
 }
 
 export default async function NewsDetailPage({ params }: { params: Promise<{ slug: string }> }) {

@@ -15,7 +15,7 @@ export async function SiteLayout({ children }: { children: React.ReactNode }) {
     <>
       <Header settings={settings} />
       <main className="flex-1">{children}</main>
-      <Footer settings={settings} />
+      <Footer />
     </>
   );
 }

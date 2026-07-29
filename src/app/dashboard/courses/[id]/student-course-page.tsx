@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { DashboardLayout } from "@/components/dashboard/dashboard-layout";
 import { LessonViewer } from "@/components/course/lesson-viewer";
@@ -8,6 +8,10 @@ import { ProgressBar } from "@/components/ui";
 import { CourseThumbnail } from "@/components/ui/course-thumbnail";
 import { Button } from "@/components/ui/button";
 import { studentApi, type StudentLesson } from "@/lib/auth";
+
+function firstUnlockedLesson(lessons: StudentLesson[]): StudentLesson | null {
+  return lessons.find((l) => !l.is_locked) || lessons[0] || null;
+}
 
 export function StudentCoursePage({ courseId }: { courseId: number }) {
   const [course, setCourse] = useState<{
@@ -17,27 +21,61 @@ export function StudentCoursePage({ courseId }: { courseId: number }) {
   } | null>(null);
   const [activeLesson, setActiveLesson] = useState<StudentLesson | null>(null);
   const [completing, setCompleting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const progressSaveRef = useRef<Record<number, number>>({});
 
   useEffect(() => {
     studentApi.course(courseId).then((res) => {
       setCourse(res);
-      const firstIncomplete = res.lessons.find((l) => !l.is_completed) || res.lessons[0] || null;
-      setActiveLesson(firstIncomplete);
+      const target =
+        res.lessons.find((l) => !l.is_completed && !l.is_locked) ||
+        firstUnlockedLesson(res.lessons);
+      setActiveLesson(target);
     }).catch(console.error);
   }, [courseId]);
 
+  const saveProgress = useCallback(async (lessonId: number, percent: number) => {
+    const lastSaved = progressSaveRef.current[lessonId] ?? 0;
+    const milestone = percent >= 95 || percent - lastSaved >= 10;
+    if (!milestone) return;
+
+    progressSaveRef.current[lessonId] = percent;
+
+    try {
+      await studentApi.updateLessonProgress(lessonId, percent);
+    } catch {
+      // Progress sync is best-effort; completion is validated server-side.
+    }
+  }, []);
+
+  async function handleQuizPassed(lessonId: number) {
+    setCourse((prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        lessons: prev.lessons.map((l) =>
+          l.id === lessonId ? { ...l, quiz_passed: true } : l
+        ),
+      };
+    });
+    setActiveLesson((prev) => (prev?.id === lessonId ? { ...prev, quiz_passed: true } : prev));
+  }
+
   async function markComplete(lessonId: number) {
     setCompleting(true);
+    setError(null);
     try {
       await studentApi.completeLesson(lessonId);
       const updated = await studentApi.course(courseId);
       setCourse(updated);
       const current = updated.lessons.find((l) => l.id === lessonId) || null;
       setActiveLesson(current);
-      const next = updated.lessons.find((l) => !l.is_completed);
+      const next = updated.lessons.find((l) => !l.is_completed && !l.is_locked);
       if (next && next.id !== lessonId) {
         setTimeout(() => setActiveLesson(next), 800);
       }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "تعذّر إكمال الدرس");
     } finally {
       setCompleting(false);
     }
@@ -88,6 +126,12 @@ export function StudentCoursePage({ courseId }: { courseId: number }) {
         </div>
       </div>
 
+      {error && (
+        <div className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          {error}
+        </div>
+      )}
+
       {course.lessons.length === 0 ? (
         <div className="card p-12 text-center text-muted">
           <p>لا توجد دروس منشورة في هذه الدورة بعد</p>
@@ -100,10 +144,14 @@ export function StudentCoursePage({ courseId }: { courseId: number }) {
           lessons={course.lessons}
           activeLesson={activeLesson}
           onSelectLesson={(lesson) => {
+            if (lesson.is_locked) return;
             const full = course.lessons.find((l) => l.id === lesson.id) ?? null;
             setActiveLesson(full);
+            setError(null);
           }}
           onComplete={markComplete}
+          onProgressUpdate={saveProgress}
+          onQuizPassed={handleQuizPassed}
           completing={completing}
           progress={course.progress}
         />

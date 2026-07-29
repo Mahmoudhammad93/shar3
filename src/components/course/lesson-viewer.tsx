@@ -1,11 +1,14 @@
 "use client";
 
-import { CheckCircle2, Clock, Lock } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { CheckCircle2, Clock, Lock, PlayCircle } from "lucide-react";
 import { cn } from "@/lib/cn";
+import { TrackedVideoPlayer, VIDEO_WATCH_THRESHOLD } from "@/components/ui/tracked-video-player";
 import { VideoPlayer } from "@/components/ui/video-player";
 import { Button } from "@/components/ui/button";
 import { ProgressBar } from "@/components/ui/progress";
 import { Card, CardContent } from "@/components/ui/card";
+import { LessonQuiz, ReportErrorButton } from "@/components/course/lesson-quiz";
 
 export interface LessonItem {
   id: number;
@@ -16,6 +19,9 @@ export interface LessonItem {
   sort_order?: number;
   is_completed?: boolean;
   progress_percent?: number;
+  is_locked?: boolean;
+  has_quiz?: boolean;
+  quiz_passed?: boolean;
 }
 
 function formatContent(content?: string) {
@@ -41,6 +47,8 @@ export function LessonViewer({
   activeLesson,
   onSelectLesson,
   onComplete,
+  onProgressUpdate,
+  onQuizPassed,
   completing,
   progress,
   readOnly = false,
@@ -49,16 +57,81 @@ export function LessonViewer({
   activeLesson: LessonItem | null;
   onSelectLesson: (lesson: LessonItem) => void;
   onComplete?: (lessonId: number) => void;
+  onProgressUpdate?: (lessonId: number, percent: number) => void;
+  onQuizPassed?: (lessonId: number) => void;
   completing?: boolean;
   progress?: number;
   readOnly?: boolean;
 }) {
+  const [videoWatched, setVideoWatched] = useState(false);
+  const activeLessonIdRef = useRef(activeLesson?.id);
+  const onProgressUpdateRef = useRef(onProgressUpdate);
+  const activeLessonButtonRef = useRef<HTMLButtonElement>(null);
+
+  activeLessonIdRef.current = activeLesson?.id;
+  onProgressUpdateRef.current = onProgressUpdate;
+
+  const videoRequired = !!activeLesson?.video_url;
+  const savedProgress = activeLesson?.progress_percent ?? 0;
+
+  useEffect(() => {
+    if (!activeLesson) {
+      setVideoWatched(false);
+      return;
+    }
+
+    if (!activeLesson.video_url) {
+      setVideoWatched(true);
+      return;
+    }
+
+    setVideoWatched(savedProgress >= VIDEO_WATCH_THRESHOLD);
+  }, [activeLesson?.id, activeLesson?.video_url, savedProgress]);
+
+  useEffect(() => {
+    activeLessonButtonRef.current?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+  }, [activeLesson?.id]);
+
+  const handleProgressUpdate = useCallback(
+    (percent: number) => {
+      const lessonId = activeLessonIdRef.current;
+      if (!lessonId || readOnly) return;
+      onProgressUpdateRef.current?.(lessonId, percent);
+      if (percent >= VIDEO_WATCH_THRESHOLD) {
+        setVideoWatched(true);
+      }
+    },
+    [readOnly]
+  );
+
+  const handleVideoComplete = useCallback(() => {
+    setVideoWatched(true);
+  }, []);
+
+  const canComplete = (!videoRequired || videoWatched) && (!activeLesson?.has_quiz || activeLesson?.quiz_passed);
+
+  function handleSelectLesson(lesson: LessonItem) {
+    if (!readOnly && lesson.is_locked) return;
+    onSelectLesson(lesson);
+  }
+
   return (
     <div className="grid gap-6 lg:grid-cols-3">
       <div className="space-y-5 lg:col-span-2">
         {activeLesson ? (
           <>
-            <VideoPlayer url={activeLesson.video_url} title={activeLesson.title_ar} />
+            {!readOnly ? (
+              <TrackedVideoPlayer
+                key={activeLesson.id}
+                url={activeLesson.video_url}
+                title={activeLesson.title_ar}
+                initialProgress={savedProgress}
+                onProgressUpdate={handleProgressUpdate}
+                onVideoComplete={handleVideoComplete}
+              />
+            ) : (
+              <VideoPlayer url={activeLesson.video_url} title={activeLesson.title_ar} />
+            )}
             <Card>
               <CardContent className="p-6 md:p-8">
                 <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
@@ -71,14 +144,35 @@ export function LessonViewer({
                   )}
                 </div>
                 <div className="prose prose-sm max-w-none">{formatContent(activeLesson.content_ar)}</div>
+                {!readOnly && activeLesson.has_quiz && (
+                  <LessonQuiz
+                    lessonId={activeLesson.id}
+                    quizPassed={activeLesson.quiz_passed}
+                    onPassed={() => onQuizPassed?.(activeLesson.id)}
+                  />
+                )}
                 {!readOnly && onComplete && !activeLesson.is_completed && (
-                  <Button
-                    className="mt-6"
-                    onClick={() => onComplete(activeLesson.id)}
-                    disabled={completing}
-                  >
-                    {completing ? "جاري الحفظ..." : "إكمال الدرس ✓"}
-                  </Button>
+                  <div className="mt-6 space-y-2">
+                    <div className="flex flex-wrap gap-3">
+                      <Button
+                        onClick={() => onComplete(activeLesson.id)}
+                        disabled={completing || !canComplete}
+                      >
+                        {completing ? "جاري الحفظ..." : "إكمال الدرس ✓"}
+                      </Button>
+                      <ReportErrorButton lessonId={activeLesson.id} />
+                    </div>
+                    {videoRequired && !videoWatched && (
+                      <p className="text-sm text-muted">
+                        شاهد الفيديو كاملاً ({VIDEO_WATCH_THRESHOLD}%) لتفعيل إكمال الدرس
+                      </p>
+                    )}
+                    {activeLesson.has_quiz && !activeLesson.quiz_passed && videoWatched && (
+                      <p className="text-sm text-muted">
+                        يجب اجتياز أسئلة الدرس قبل الإكمال والانتقال للدرس التالي
+                      </p>
+                    )}
+                  </div>
                 )}
                 {!readOnly && activeLesson.is_completed && (
                   <p className="mt-6 inline-flex items-center gap-2 rounded-xl bg-brand/10 px-4 py-2 text-sm font-medium text-brand">
@@ -106,28 +200,65 @@ export function LessonViewer({
           {lessons.map((lesson, index) => {
             const active = activeLesson?.id === lesson.id;
             const completed = lesson.is_completed;
+            const locked = !readOnly && !!lesson.is_locked;
             return (
               <button
                 key={lesson.id}
+                ref={active ? activeLessonButtonRef : undefined}
                 type="button"
-                onClick={() => onSelectLesson(lesson)}
+                onClick={() => handleSelectLesson(lesson)}
+                disabled={locked}
+                aria-current={active ? "true" : undefined}
                 className={cn(
-                  "card w-full p-4 text-start transition",
-                  active && "border-brand bg-brand/5 ring-1 ring-brand/20"
+                  "relative w-full overflow-hidden rounded-2xl border p-4 text-start transition",
+                  active
+                    ? "border-2 border-gold bg-gold/10 shadow-md ring-2 ring-gold/25"
+                    : "card border-border hover:border-brand/30 hover:bg-brand/5",
+                  locked && "cursor-not-allowed opacity-60"
                 )}
               >
+                {active && <span className="absolute inset-y-3 end-0 w-1 rounded-full bg-gold" aria-hidden />}
                 <div className="flex items-start gap-3">
                   <span
                     className={cn(
                       "flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-sm",
-                      completed ? "bg-brand/15 text-brand" : "bg-background text-muted"
+                      active && !completed
+                        ? "bg-gold/25 text-brand-dark"
+                        : completed
+                          ? "bg-brand/15 text-brand"
+                          : locked
+                            ? "bg-muted/20 text-muted"
+                            : "bg-background text-muted"
                     )}
                   >
-                    {completed ? <CheckCircle2 className="h-4 w-4" /> : index + 1}
+                    {completed ? (
+                      <CheckCircle2 className="h-4 w-4" />
+                    ) : active ? (
+                      <PlayCircle className="h-4 w-4 fill-brand/20" />
+                    ) : locked ? (
+                      <Lock className="h-4 w-4" />
+                    ) : (
+                      index + 1
+                    )}
                   </span>
                   <div className="min-w-0 flex-1">
-                    <p className="text-sm font-semibold text-brand-dark">{lesson.title_ar}</p>
-                    {lesson.duration_minutes && (
+                    {active && (
+                      <span className="mb-1 inline-flex rounded-full bg-gold/25 px-2 py-0.5 text-[10px] font-bold text-brand-dark">
+                        الدرس الحالي
+                      </span>
+                    )}
+                    <p
+                      className={cn(
+                        "text-sm text-brand-dark",
+                        active ? "font-bold" : "font-semibold"
+                      )}
+                    >
+                      {lesson.title_ar}
+                    </p>
+                    {locked && (
+                      <p className="mt-1 text-xs text-muted">أكمل الدرس السابق أولاً</p>
+                    )}
+                    {!locked && lesson.duration_minutes && (
                       <p className="mt-1 text-xs text-muted">{lesson.duration_minutes} دقيقة</p>
                     )}
                   </div>

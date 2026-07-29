@@ -6,6 +6,7 @@ import { cn } from "@/lib/cn";
 import { useAuth } from "@/components/providers/auth-provider";
 import { DashboardThemeProvider, useDashboardTheme } from "@/components/providers/dashboard-theme-provider";
 import { DashboardSidebar } from "@/components/dashboard/dashboard-sidebar";
+import { Footer } from "@/components/layout/footer";
 
 function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -32,16 +33,17 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen" style={{ backgroundColor: "var(--dashboard-background, #f4f7f6)" }}>
       <DashboardSidebar />
-      <main className="min-h-screen ps-[272px]">
+      <main className="flex min-h-screen flex-col ps-[272px]">
         <div
           className={cn(
-            "mx-auto w-full",
+            "mx-auto w-full flex-1",
             theme.layout === "container" ? "max-w-7xl" : "max-w-none",
             theme.compactMode ? "p-4 md:p-5" : "p-5 md:p-8"
           )}
         >
           {children}
         </div>
+        <Footer />
       </main>
     </div>
   );

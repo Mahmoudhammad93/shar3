@@ -98,7 +98,7 @@ async function authFetch<T>(path: string, options: RequestInit = {}, { public: i
 }
 
 export const authApi = {
-  register: async (data: { name: string; email: string; phone?: string; password: string; password_confirmation: string }) => {
+  register: async (data: RegisterPayload) => {
     const res = await authFetch<{ token: string; user: AuthUser }>(
       "/auth/register",
       { method: "POST", body: JSON.stringify(data) },
@@ -147,6 +147,29 @@ export const studentApi = {
 
   completeLesson: (lessonId: number) => authFetch(`/student/lessons/${lessonId}/complete`, { method: "POST" }),
 
+  updateLessonProgress: (lessonId: number, progressPercent: number) =>
+    authFetch<{ progress_percent: number }>(`/student/lessons/${lessonId}/progress`, {
+      method: "POST",
+      body: JSON.stringify({ progress_percent: progressPercent }),
+    }),
+
+  lessonQuiz: (lessonId: number) =>
+    authFetch<{ lesson_id: number; questions: { id: number; question_ar: string; options: { id: number; option_ar: string }[] }[] }>(
+      `/student/lessons/${lessonId}/quiz`,
+    ),
+
+  submitLessonQuiz: (lessonId: number, answers: Record<number, number>) =>
+    authFetch<{ message: string; passed: boolean }>(`/student/lessons/${lessonId}/quiz`, {
+      method: "POST",
+      body: JSON.stringify({ answers }),
+    }),
+
+  reportError: (data: { lesson_id?: number; page_url?: string; error_type: string; description: string }) =>
+    authFetch<{ message: string }>("/student/error-reports", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+
   schedule: () => authFetch<{ data: ScheduleItem[] }>("/student/schedule"),
 
   assignments: () => authFetch<{ data: AssignmentItem[] }>("/student/assignments"),
@@ -156,11 +179,48 @@ export const studentApi = {
 
   grades: () => authFetch<{ grades: GradeItem[]; certificates: CertificateItem[] }>("/student/grades"),
 
-  profile: () => authFetch<{ user: { name: string; email: string }; student: { phone?: string; country?: string; city?: string; status: string } }>("/student/profile"),
+  certificate: (id: number) =>
+    authFetch<{ certificate: CertificateDetail }>(`/student/certificates/${id}`),
 
-  updateProfile: (data: { name?: string; phone?: string; country?: string; city?: string }) =>
-    authFetch("/student/profile", { method: "PUT", body: JSON.stringify(data) }),
+  profile: () => authFetch<{ user: { name: string; email: string }; student: StudentProfile }>("/student/profile"),
+
+  updateProfile: (data: {
+    name?: string;
+    phone?: string;
+    whatsapp?: string;
+    country?: string;
+    city?: string;
+  }) => authFetch<{ message: string; student: StudentProfile }>("/student/profile", { method: "PUT", body: JSON.stringify(data) }),
 };
+
+export interface StudentProfile {
+  first_name?: string | null;
+  last_name?: string | null;
+  phone?: string | null;
+  whatsapp?: string | null;
+  gender?: string | null;
+  gender_label?: string | null;
+  birth_date?: string | null;
+  nationality?: string | null;
+  country?: string | null;
+  country_label?: string | null;
+  city?: string | null;
+  national_id?: string | null;
+  education_level?: string | null;
+  education_level_label?: string | null;
+  heard_about?: string | null;
+  heard_about_label?: string | null;
+  works_full_time?: boolean | null;
+  works_full_time_label?: string | null;
+  participates_other_programs?: boolean | null;
+  participates_other_programs_label?: string | null;
+  daily_hours?: string | null;
+  daily_hours_label?: string | null;
+  terms_accepted_at?: string | null;
+  status: number;
+  status_label?: string;
+  photo?: string | null;
+}
 
 export interface StudentCourse {
   enrollment_id: number;
@@ -187,6 +247,9 @@ export interface StudentLesson {
   duration_minutes?: number;
   is_completed: boolean;
   progress_percent: number;
+  quiz_passed?: boolean;
+  has_quiz?: boolean;
+  is_locked?: boolean;
 }
 
 export interface ScheduleItem {
@@ -223,4 +286,53 @@ export interface CertificateItem {
   course?: string;
   certificate_number: string;
   issued_at: string;
+}
+
+export interface CertificateDetail {
+  id: number;
+  certificate_number: string;
+  issued_at: string;
+  issued_at_label: string;
+  student_name: string;
+  course_title?: string;
+  teacher_name?: string | null;
+  teacher_title?: string | null;
+  institute_name?: string;
+  institute_tagline?: string | null;
+  academic_year?: string | null;
+  file_url?: string | null;
+}
+
+export interface RegisterPayload {
+  first_name: string;
+  last_name: string;
+  email: string;
+  phone?: string;
+  whatsapp?: string;
+  password: string;
+  password_confirmation: string;
+  gender?: "male" | "female";
+  birth_date?: string;
+  nationality?: string;
+  country?: string;
+  education_level?: string;
+  heard_about?: string;
+  works_full_time?: boolean;
+  participates_other_programs?: boolean;
+  daily_hours?: string;
+  accept_terms: boolean;
+}
+
+export async function submitVolunteer(data: {
+  name: string;
+  country: string;
+  phone: string;
+  whatsapp?: string;
+  work_type: string;
+  experience?: string;
+}) {
+  return authFetch<{ message: string }>("/volunteer", {
+    method: "POST",
+    body: JSON.stringify(data),
+  }, { public: true });
 }

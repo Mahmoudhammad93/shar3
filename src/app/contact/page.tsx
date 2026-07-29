@@ -5,13 +5,24 @@ import { PageHero } from "@/components/sections/page-hero";
 import { Container } from "@/components/ui/container";
 import { Card, CardContent } from "@/components/ui/card";
 import { api } from "@/lib/api";
+import { buildMetadata } from "@/lib/seo";
+
+export const metadata = buildMetadata({
+  title: "تواصل معنا",
+  description:
+    "تواصل مع معهد علم شرعي للاستفسار عن الدورات والبرامج الشرعية، التسجيل، والقبول. نسعد بالرد على أسئلتكم حول طلب العلم الشرعي.",
+  path: "/contact/",
+});
 
 export default async function ContactPage() {
   const { data: settings } = await api.getSettings();
 
   return (
     <SiteLayout>
-      <PageHero title="تواصل معنا" subtitle="نسعد باستقبال استفساراتكم وملاحظاتكم" />
+      <PageHero
+        title="تواصل معنا"
+        subtitle="نسعد باستقبال استفساراتكم حول الدورات والبرامج الشرعية والتسجيل في المعهد"
+      />
       <Container className="grid gap-10 py-16 lg:grid-cols-2">
         <div className="space-y-6">
           <Card>

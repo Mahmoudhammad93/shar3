@@ -6,6 +6,7 @@ import Link from "next/link";
 import { AuthLayout, AuthLinks } from "@/components/layout/auth-layout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
 import { useAuth } from "@/components/providers/auth-provider";
 import { authApi } from "@/lib/auth";
 
@@ -45,7 +46,7 @@ export default function LoginPage() {
     <AuthLayout title="تسجيل الدخول" subtitle="مرحباً بعودتك">
       <form onSubmit={handleSubmit} className="space-y-4">
         <Input name="email" type="email" required placeholder="البريد الإلكتروني" />
-        <Input name="password" type="password" required placeholder="كلمة المرور" />
+        <PasswordInput name="password" required placeholder="كلمة المرور" />
         <label className="flex items-center gap-2 text-sm text-muted">
           <input type="checkbox" className="rounded border-border" />
           تذكرني
