@@ -1,0 +1,8 @@
+User-Agent: *
+Allow: /
+Disallow: /dashboard/
+Disallow: /login/
+Disallow: /register/
+Disallow: /forgot-password/
+
+Sitemap: https://shar3.chiefcoder.net/sitemap.xml
