@@ -19,23 +19,57 @@ export interface AuthUser {
   student?: StudentAuthState | null;
 }
 
+const TOKEN_KEY = "token";
+const TOKEN_EXPIRES_AT_KEY = "token_expires_at";
+const AUTH_SESSION_MS = 60 * 60 * 1000;
+
 function getToken(): string | null {
   if (typeof window === "undefined") return null;
-  return localStorage.getItem("token");
+
+  const token = localStorage.getItem(TOKEN_KEY);
+  if (!token) return null;
+
+  const expiresAt = Number(localStorage.getItem(TOKEN_EXPIRES_AT_KEY) || 0);
+  if (expiresAt > 0 && Date.now() >= expiresAt) {
+    clearToken();
+    return null;
+  }
+
+  return token;
 }
 
-export function setToken(token: string) {
-  localStorage.setItem("token", token);
+export function setToken(token: string, expiresAt?: string | number | null) {
+  localStorage.setItem(TOKEN_KEY, token);
+
+  let expiresMs = Date.now() + AUTH_SESSION_MS;
+  if (typeof expiresAt === "number" && Number.isFinite(expiresAt)) {
+    expiresMs = expiresAt > 1_000_000_000_000 ? expiresAt : Date.now() + expiresAt * 1000;
+  } else if (typeof expiresAt === "string" && expiresAt.trim() !== "") {
+    const parsed = Date.parse(expiresAt);
+    if (!Number.isNaN(parsed)) {
+      expiresMs = parsed;
+    }
+  }
+
+  localStorage.setItem(TOKEN_EXPIRES_AT_KEY, String(expiresMs));
+
   if (typeof window !== "undefined") {
     window.dispatchEvent(new Event("share3a-auth-change"));
   }
 }
 
 export function clearToken() {
-  localStorage.removeItem("token");
+  localStorage.removeItem(TOKEN_KEY);
+  localStorage.removeItem(TOKEN_EXPIRES_AT_KEY);
   if (typeof window !== "undefined") {
     window.dispatchEvent(new Event("share3a-auth-change"));
   }
+}
+
+export function getTokenExpiresAt(): number | null {
+  if (typeof window === "undefined") return null;
+  const expiresAt = Number(localStorage.getItem(TOKEN_EXPIRES_AT_KEY) || 0);
+  return expiresAt > 0 ? expiresAt : null;
 }
 
 export function isAuthenticated(): boolean {
@@ -114,22 +148,24 @@ async function authFetch<T>(path: string, options: RequestInit = {}, { public: i
 
 export const authApi = {
   register: async (data: RegisterPayload) => {
-    const res = await authFetch<{ token: string; user: AuthUser }>(
-      "/auth/register",
-      { method: "POST", body: JSON.stringify(data) },
-      { public: true },
-    );
-    setToken(res.token);
+    const res = await authFetch<{
+      token: string;
+      expires_at?: string;
+      expires_in?: number;
+      user: AuthUser;
+    }>("/auth/register", { method: "POST", body: JSON.stringify(data) }, { public: true });
+    setToken(res.token, res.expires_at ?? res.expires_in ?? null);
     return res;
   },
 
   login: async (email: string, password: string) => {
-    const res = await authFetch<{ token: string; user: AuthUser }>(
-      "/auth/login",
-      { method: "POST", body: JSON.stringify({ email, password }) },
-      { public: true },
-    );
-    setToken(res.token);
+    const res = await authFetch<{
+      token: string;
+      expires_at?: string;
+      expires_in?: number;
+      user: AuthUser;
+    }>("/auth/login", { method: "POST", body: JSON.stringify({ email, password }) }, { public: true });
+    setToken(res.token, res.expires_at ?? res.expires_in ?? null);
     return res;
   },
 

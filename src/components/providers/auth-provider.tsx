@@ -11,6 +11,7 @@ import {
 import {
   authApi,
   clearToken,
+  getTokenExpiresAt,
   isAuthenticated,
   type AuthUser,
 } from "@/lib/auth";
@@ -81,6 +82,31 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       window.removeEventListener("storage", handleAuthChange);
     };
   }, [refreshUser]);
+
+  useEffect(() => {
+    const expiresAt = getTokenExpiresAt();
+    if (!expiresAt) {
+      return;
+    }
+
+    const remaining = expiresAt - Date.now();
+    if (remaining <= 0) {
+      clearToken();
+      setUser(null);
+      return;
+    }
+
+    const timer = window.setTimeout(() => {
+      clearToken();
+      setUser(null);
+      const pathname = window.location.pathname;
+      if (pathname.startsWith("/dashboard")) {
+        window.location.href = "/login";
+      }
+    }, remaining);
+
+    return () => window.clearTimeout(timer);
+  }, [user]);
 
   const value = useMemo(
     () => ({
