@@ -34,6 +34,19 @@ interface YtPlayerInstance {
   destroy: () => void;
 }
 
+function bunnyEmbedUrl(url: string): string | null {
+  try {
+    const parsed = new URL(url);
+    if (!["player.mediadelivery.net", "iframe.mediadelivery.net"].includes(parsed.hostname)) {
+      return null;
+    }
+    if (!parsed.pathname.startsWith("/embed/")) return null;
+    return parsed.toString();
+  } catch {
+    return null;
+  }
+}
+
 function extractYoutubeId(url: string): string | null {
   const patterns = [
     /(?:youtube\.com\/watch\?.*v=|youtube\.com\/embed\/|youtu\.be\/|youtube\.com\/shorts\/)([a-zA-Z0-9_-]{11})/,
@@ -169,6 +182,33 @@ export function TrackedVideoPlayer({
   }, [url, playerId]);
 
   if (url) {
+    const bunnyUrl = bunnyEmbedUrl(url);
+    if (bunnyUrl) {
+      return (
+        <div className="space-y-3">
+          <div className="aspect-video overflow-hidden rounded-2xl bg-black shadow-lg">
+            <iframe
+              src={bunnyUrl}
+              title={title}
+              className="h-full w-full"
+              allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture;"
+              allowFullScreen
+              onLoad={() => reportProgress(100)}
+            />
+          </div>
+          <Link
+            href={bunnyUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 text-xs text-muted transition hover:text-brand"
+          >
+            <ExternalLink className="h-3.5 w-3.5" />
+            فتح رابط الفيديو
+          </Link>
+        </div>
+      );
+    }
+
     const youtubeId = extractYoutubeId(url);
     if (youtubeId) {
       const watchUrl = `https://www.youtube.com/watch?v=${youtubeId}`;

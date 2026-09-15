@@ -1,6 +1,6 @@
 import { Suspense } from "react";
 import { SiteLayout } from "@/components/layout/site-layout";
-import { PageHero } from "@/components/sections/page-hero";
+import { ConfigurablePageHero } from "@/components/sections/configurable-page-hero";
 import { api } from "@/lib/api";
 import { buildMetadata } from "@/lib/seo";
 import { CoursesPageContent } from "./courses-page-content";
@@ -17,9 +17,10 @@ export default async function CoursesPage() {
 
   return (
     <SiteLayout>
-      <PageHero
-        title="الدورات الشرعية"
-        subtitle="دورات معتمدة في القرآن والتفسير والفقه والحديث والعقيدة — على منهج أهل السنة والجماعة"
+      <ConfigurablePageHero
+        path="/courses"
+        fallbackTitle="الدورات الشرعية"
+        fallbackSubtitle="دورات معتمدة في القرآن والتفسير والفقه والحديث والعقيدة — على منهج أهل السنة والجماعة"
       />
       <Suspense fallback={<p className="py-16 text-center text-muted">جاري التحميل...</p>}>
         <CoursesPageContent courses={courses} />

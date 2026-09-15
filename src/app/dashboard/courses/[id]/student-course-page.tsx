@@ -91,7 +91,7 @@ export function StudentCoursePage({ courseId }: { courseId: number }) {
 
   return (
     <DashboardLayout>
-      <div className="relative mb-8 overflow-hidden rounded-2xl bg-[#0a3d34] text-white">
+      <div className="relative mb-8 overflow-hidden rounded-2xl text-white" style={{ backgroundColor: "var(--brand-primary, #004d40)" }}>
         <div className="grid md:grid-cols-[220px_1fr]">
           <CourseThumbnail
             title={course.course.title_ar}

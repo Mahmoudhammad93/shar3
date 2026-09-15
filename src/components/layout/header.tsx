@@ -3,14 +3,15 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import { ChevronDown, LayoutDashboard, LogOut, Menu, Search, User, X } from "lucide-react";
-import type { SiteSettings } from "@/types";
 import { SiteLogo } from "@/components/layout/site-logo";
-import { MAIN_NAV } from "@/lib/constants/navigation";
 import { cn } from "@/lib/cn";
+import { getMainNavLinks, getNavPageLabel, isNavPathActive } from "@/lib/navigation";
 import { useAuth } from "@/components/providers/auth-provider";
 import { useLocale } from "@/components/providers/locale-provider";
+import { useSiteSettings } from "@/lib/use-site-settings";
 import { Button } from "@/components/ui/button";
 import { Container } from "@/components/ui/container";
 import { Input } from "@/components/ui/input";
@@ -137,36 +138,126 @@ function AuthActions({ mobile = false, onNavigate }: { mobile?: boolean; onNavig
   );
 }
 
-export function Header({ settings }: { settings?: SiteSettings }) {
+function MobileNavDrawer({
+  open,
+  onClose,
+  pathname,
+  drawerOffset,
+  navLinks,
+  locale,
+}: {
+  open: boolean;
+  onClose: () => void;
+  pathname: string;
+  drawerOffset: string;
+  navLinks: ReturnType<typeof getMainNavLinks>;
+  locale: "ar" | "en";
+}) {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (!open) return;
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [open]);
+
+  if (!mounted) return null;
+
+  return createPortal(
+    <AnimatePresence>
+      {open && (
+        <>
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] bg-black/50 xl:hidden"
+            onClick={onClose}
+            aria-hidden
+          />
+          <motion.aside
+            initial={{ x: drawerOffset }}
+            animate={{ x: 0 }}
+            exit={{ x: drawerOffset }}
+            transition={{ type: "spring", damping: 28, stiffness: 320 }}
+            className="fixed inset-y-0 start-0 z-[101] flex w-[min(100%,320px)] flex-col overflow-y-auto border-e border-border bg-white p-6 shadow-2xl xl:hidden"
+            role="dialog"
+            aria-modal="true"
+            aria-label="القائمة"
+          >
+            <div className="mb-6 flex shrink-0 items-center justify-between">
+              <p className="font-bold text-brand">القائمة</p>
+              <button type="button" onClick={onClose} aria-label="إغلاق">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <nav className="flex flex-col gap-1">
+              {navLinks.map((link) => (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  onClick={onClose}
+                  className={cn(
+                    "rounded-xl px-4 py-3 text-sm font-medium",
+                    isNavPathActive(pathname, link.href) ? "bg-brand/10 text-brand" : "text-foreground hover:bg-brand/5"
+                  )}
+                >
+                  {getNavPageLabel(link, locale)}
+                </Link>
+              ))}
+            </nav>
+            <div className="mt-6 space-y-4 pb-6">
+              <LanguageSwitcher className="w-full justify-center" />
+              <AuthActions mobile onNavigate={onClose} />
+            </div>
+          </motion.aside>
+        </>
+      )}
+    </AnimatePresence>,
+    document.body
+  );
+}
+
+export function Header() {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
-  const { isRtl } = useLocale();
+  const { isRtl, locale } = useLocale();
+  const { settings } = useSiteSettings();
+  const navLinks = getMainNavLinks(settings);
   const drawerOffset = isRtl ? "100%" : "-100%";
 
   return (
     <header className="sticky top-0 z-50 border-b border-border/80 bg-surface/90 backdrop-blur-xl">
       <Container className="flex h-[72px] max-w-none items-center gap-2 px-3 sm:px-4 xl:px-5">
         <SiteLogo
-          settings={settings}
-          size="sm"
+          size="md"
           showText
-          textClassName="hidden md:block max-w-[8.5rem] xl:max-w-[10rem]"
-          className="shrink-0 gap-2"
+          textClassName="hidden md:block"
+          className="shrink-0 gap-2.5"
         />
 
         <nav className="hidden min-w-0 flex-1 items-center justify-center gap-0.5 xl:flex">
-          {MAIN_NAV.map((link) => (
+          {navLinks.map((link) => (
             <Link
               key={link.href}
               href={link.href}
               className={cn(
                 "whitespace-nowrap rounded-lg px-2 py-2 text-[13px] font-medium transition-colors",
-                pathname === link.href
+                isNavPathActive(pathname, link.href)
                   ? "bg-brand/10 text-brand"
                   : "text-muted hover:bg-brand/5 hover:text-brand"
               )}
             >
-              {link.label}
+              {getNavPageLabel(link, locale)}
             </Link>
           ))}
         </nav>
@@ -191,52 +282,14 @@ export function Header({ settings }: { settings?: SiteSettings }) {
         </div>
       </Container>
 
-      <AnimatePresence>
-        {open && (
-          <>
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 z-50 bg-black/40 xl:hidden"
-              onClick={() => setOpen(false)}
-            />
-            <motion.aside
-              initial={{ x: drawerOffset }}
-              animate={{ x: 0 }}
-              exit={{ x: drawerOffset }}
-              transition={{ type: "spring", damping: 28, stiffness: 320 }}
-              className="fixed inset-y-0 start-0 z-50 w-[min(100%,320px)] bg-surface p-6 shadow-2xl xl:hidden"
-            >
-              <div className="mb-6 flex items-center justify-between">
-                <p className="font-bold text-brand">القائمة</p>
-                <button type="button" onClick={() => setOpen(false)} aria-label="إغلاق">
-                  <X className="h-5 w-5" />
-                </button>
-              </div>
-              <nav className="flex flex-col gap-1">
-                {MAIN_NAV.map((link) => (
-                  <Link
-                    key={link.href}
-                    href={link.href}
-                    onClick={() => setOpen(false)}
-                    className={cn(
-                      "rounded-xl px-4 py-3 text-sm font-medium",
-                      pathname === link.href ? "bg-brand/10 text-brand" : "text-foreground hover:bg-brand/5"
-                    )}
-                  >
-                    {link.label}
-                  </Link>
-                ))}
-              </nav>
-              <div className="mt-6 space-y-4">
-                <LanguageSwitcher className="w-full justify-center" />
-                <AuthActions mobile onNavigate={() => setOpen(false)} />
-              </div>
-            </motion.aside>
-          </>
-        )}
-      </AnimatePresence>
+      <MobileNavDrawer
+        open={open}
+        onClose={() => setOpen(false)}
+        pathname={pathname}
+        drawerOffset={drawerOffset}
+        navLinks={navLinks}
+        locale={locale}
+      />
     </header>
   );
 }

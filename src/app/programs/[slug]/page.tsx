@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { SiteLayout } from "@/components/layout/site-layout";
-import { CourseCard } from "@/components/cards/course-card";
+import { ProgramDetailCurriculum } from "@/components/programs/program-detail-curriculum";
 import { PageHero } from "@/components/sections/page-hero";
 import { Container } from "@/components/ui/container";
 import { api } from "@/lib/api";
@@ -49,12 +49,11 @@ export default async function ProgramDetailPage({ params }: { params: Promise<{ 
           {program.description_ar && (
             <p className="mx-auto mb-12 max-w-3xl text-center leading-8 text-muted">{program.description_ar}</p>
           )}
-          <h2 className="mb-8 text-2xl font-bold text-brand-dark">دورات البرنامج</h2>
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {program.courses?.map((course) => (
-              <CourseCard key={course.id} course={course} />
-            ))}
-          </div>
+
+          <h2 className="mb-8 text-2xl font-bold text-brand-dark">مواد المستوى</h2>
+
+          <ProgramDetailCurriculum slug={slug} initialProgram={program} />
+
           <Link href="/programs" className="mt-8 inline-flex items-center gap-2 text-brand hover:text-brand-dark">
             <ArrowRight className="h-4 w-4" />
             العودة للبرامج

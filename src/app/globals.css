@@ -1,20 +1,21 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f7faf9;
-  --foreground: #0a2e28;
-  --brand-primary: #004d40;
-  --brand-primary-dark: #003830;
-  --brand-primary-light: #00695c;
-  --brand-gold: #c9a227;
-  --brand-gold-light: #e6c04a;
+  --background: #f7f9fc;
+  --foreground: #0a1f3d;
+  --brand-primary: #002b5b;
+  --brand-primary-dark: #001a38;
+  --brand-primary-light: #1a4478;
+  --brand-gold: #c5a04d;
+  --brand-gold-light: #d4b56a;
   --brand-surface: #ffffff;
   --brand-muted: #64748b;
-  --brand-border: #e8efec;
+  --brand-border: #e2e8f0;
+  --form-radius: 0.75rem;
   --radius-lg: 1rem;
   --radius-xl: 1.25rem;
-  --shadow-card: 0 4px 24px -4px rgb(0 77 64 / 0.08);
-  --shadow-card-hover: 0 12px 40px -8px rgb(0 77 64 / 0.15);
+  --shadow-card: 0 4px 24px -4px rgb(0 43 91 / 0.08);
+  --shadow-card-hover: 0 12px 40px -8px rgb(0 43 91 / 0.15);
 }
 
 @theme inline {
@@ -28,6 +29,7 @@
   --color-surface: var(--brand-surface);
   --color-muted: var(--brand-muted);
   --color-border: var(--brand-border);
+  --radius-form: var(--form-radius);
   --font-sans: var(--font-cairo);
   --radius-lg: var(--radius-lg);
   --radius-xl: var(--radius-xl);
@@ -147,4 +149,104 @@ body {
 
 .dashboard-sidebar-light .dashboard-sidebar-scroll::-webkit-scrollbar-thumb {
   background-color: var(--brand-gold);
+}
+
+/* Phone input (registration) — country code always on the left */
+.share3a-phone-field {
+  direction: ltr;
+}
+
+.share3a-phone-field .PhoneInput {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+}
+
+.share3a-phone-field .PhoneInputCountry {
+  order: 0;
+  margin: 0;
+  flex-shrink: 0;
+}
+
+.share3a-phone-field .PhoneInputInput {
+  order: 1;
+  flex: 1;
+  min-width: 0;
+}
+
+.share3a-phone-field .PhoneInputCountrySelect {
+  height: 2.75rem;
+  min-width: 4.5rem;
+  border-radius: var(--form-radius);
+  border: 1px solid var(--brand-border);
+  background: var(--brand-surface);
+  padding-inline: 0.625rem;
+  font-size: 0.875rem;
+  cursor: pointer;
+}
+
+.share3a-phone-field .PhoneInputInput {
+  height: 2.75rem;
+  width: 100%;
+  border-radius: var(--form-radius);
+  border: 1px solid var(--brand-border);
+  background: var(--brand-surface);
+  padding-inline: 1rem;
+  font-size: 0.875rem;
+  color: var(--foreground);
+  outline: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  text-align: left;
+}
+
+.share3a-phone-field .PhoneInputInput:focus {
+  border-color: var(--brand-primary-light);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--brand-primary) 10%, transparent);
+}
+
+.share3a-phone-field .PhoneInputInput::placeholder {
+  color: var(--brand-muted);
+}
+
+/* Date picker popover */
+.share3a-date-picker-popover .rdp-root {
+  --rdp-accent-color: var(--brand-primary);
+  --rdp-accent-background-color: color-mix(in srgb, var(--brand-primary) 12%, transparent);
+  --rdp-day-height: 2.25rem;
+  --rdp-day-width: 2.25rem;
+  --rdp-day_button-border-radius: var(--form-radius);
+  --rdp-selected-border: none;
+  --rdp-today-color: var(--brand-gold);
+  width: 100%;
+}
+
+.share3a-date-picker-popover .rdp-months {
+  width: 100%;
+}
+
+.share3a-date-picker-popover .rdp-month {
+  width: 100%;
+}
+
+.share3a-date-picker-popover .rdp-dropdowns {
+  gap: 0.5rem;
+}
+
+.share3a-date-picker-popover .rdp-dropdown {
+  border-radius: var(--form-radius);
+  border: 1px solid var(--brand-border);
+  background: var(--brand-surface);
+  padding: 0.35rem 0.5rem;
+  font-size: 0.875rem;
+}
+
+.share3a-date-picker-popover .rdp-day_button:hover {
+  background: color-mix(in srgb, var(--brand-primary) 8%, transparent);
+}
+
+.share3a-date-picker-popover .rdp-selected .rdp-day_button {
+  background: var(--brand-primary);
+  color: #fff;
 }

@@ -1,3 +1,14 @@
+export interface NavPageItem {
+  href: string;
+  label_ar: string;
+  label_en?: string | null;
+  description_ar?: string | null;
+  description_en?: string | null;
+  show_in_footer?: boolean;
+  is_visible?: boolean;
+  sort_order?: number;
+}
+
 export interface SiteSettings {
   site_name_ar: string;
   site_name_en?: string;
@@ -9,6 +20,10 @@ export interface SiteSettings {
   vision_en?: string;
   mission_ar?: string;
   mission_en?: string;
+  study_plan_intro_ar?: string;
+  study_plan_intro_en?: string;
+  regulations_ar?: string;
+  regulations_en?: string;
   address_ar?: string;
   address_en?: string;
   phone?: string;
@@ -18,7 +33,9 @@ export interface SiteSettings {
   twitter?: string;
   instagram?: string;
   youtube?: string;
+  telegram?: string;
   logo?: string;
+  favicon?: string;
   footer_text_ar?: string;
   footer_text_en?: string;
   dashboard_institute_name_ar?: string;
@@ -38,11 +55,20 @@ export interface SiteSettings {
   dashboard_sidebar_color?: string;
   dashboard_accent_color?: string;
   dashboard_background_color?: string;
+  dashboard_color_palette?: string;
   dashboard_style?: "classic" | "modern" | "minimal" | "compact";
   dashboard_layout?: "wide" | "container";
   dashboard_sidebar_style?: "dark" | "light";
   dashboard_show_pattern?: boolean;
   dashboard_compact_mode?: boolean;
+  homepage_featured_courses_enabled?: boolean;
+  homepage_featured_courses_visible_from?: string | null;
+  homepage_featured_courses_visible_until?: string | null;
+  website_primary_color?: string;
+  website_accent_color?: string;
+  website_background_color?: string;
+  website_color_palette?: string;
+  website_nav_pages?: NavPageItem[];
 }
 
 export interface HeroSlide {
@@ -82,6 +108,42 @@ export interface Lesson {
   sort_order: number;
 }
 
+export interface ProgramSubject {
+  id: number;
+  name_ar: string;
+  slug: string;
+  is_required?: boolean;
+  memorization_ar?: string | null;
+  primary_text_ar?: string | null;
+  supplementary_text_ar?: string | null;
+  course?: { id: number; slug: string; title_ar: string; title_en?: string } | null;
+}
+
+export interface ProgramCurriculumSemester {
+  id: number;
+  name_ar: string;
+  slug: string;
+  semester_number: number;
+  subjects: ProgramSubject[];
+}
+
+export interface ProgramCurriculumYear {
+  id: number;
+  name_ar: string;
+  slug: string;
+  year_number: number;
+  semesters: ProgramCurriculumSemester[];
+}
+
+export interface ProgramSpecializationSubjects {
+  id: number;
+  name_ar: string;
+  slug: string;
+  description_ar?: string;
+  years?: ProgramCurriculumYear[];
+  subjects: ProgramSubject[];
+}
+
 export interface Program {
   id: number;
   name_ar: string;
@@ -91,7 +153,10 @@ export interface Program {
   level?: string;
   image?: string;
   courses_count?: number;
-  courses?: Course[];
+  subjects_count?: number;
+  years?: ProgramCurriculumYear[];
+  subjects?: ProgramSubject[];
+  specializations?: ProgramSpecializationSubjects[];
 }
 
 export interface Teacher {
@@ -102,6 +167,7 @@ export interface Teacher {
   bio_ar?: string;
   specializations?: string;
   photo?: string;
+  is_featured?: boolean;
   courses_count?: number;
   courses?: Course[];
 }
@@ -133,6 +199,7 @@ export interface Faq {
 
 export interface HomeData {
   settings: SiteSettings;
+  homepage_featured_courses_visible: boolean;
   hero_slides: HeroSlide[];
   featured_courses: Course[];
   programs: Program[];
@@ -153,4 +220,55 @@ export interface PaginatedMeta {
   current_page: number;
   last_page: number;
   total: number;
+}
+
+export interface StudyPlanSubject {
+  id: number;
+  name_ar: string;
+  name_en?: string;
+  slug: string;
+  is_required: boolean;
+  memorization_ar?: string | null;
+  primary_text_ar?: string | null;
+  supplementary_text_ar?: string | null;
+  course?: { id: number; slug: string; title_ar: string; title_en?: string } | null;
+}
+
+export interface StudyPlanSemester {
+  id: number;
+  name_ar: string;
+  name_en?: string;
+  slug: string;
+  semester_number: number;
+  subjects: StudyPlanSubject[];
+}
+
+export interface StudyPlanYear {
+  id: number;
+  name_ar: string;
+  name_en?: string;
+  slug: string;
+  year_number: number;
+  semesters: StudyPlanSemester[];
+}
+
+export interface StudyPlanSpecialization {
+  id: number;
+  name_ar: string;
+  name_en?: string;
+  slug: string;
+  description_ar?: string;
+  years: StudyPlanYear[];
+}
+
+export interface AcademicLevel {
+  id: number;
+  name_ar: string;
+  name_en?: string;
+  slug: string;
+  number: number;
+  curriculum_type?: "general" | "specialized";
+  description_ar?: string;
+  years?: StudyPlanYear[];
+  specializations?: StudyPlanSpecialization[];
 }

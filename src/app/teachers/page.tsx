@@ -1,9 +1,9 @@
+import { Suspense } from "react";
 import { SiteLayout } from "@/components/layout/site-layout";
-import { TeacherCard } from "@/components/cards/teacher-card";
-import { PageHero } from "@/components/sections/page-hero";
-import { Container } from "@/components/ui/container";
+import { ConfigurablePageHero } from "@/components/sections/configurable-page-hero";
 import { api } from "@/lib/api";
 import { buildMetadata } from "@/lib/seo";
+import { TeachersPageContent } from "./teachers-page-content";
 
 export const metadata = buildMetadata({
   title: "المعلمون",
@@ -17,15 +17,14 @@ export default async function TeachersPage() {
 
   return (
     <SiteLayout>
-      <PageHero
-        title="المعلمون"
-        subtitle="نخبة من أهل العلم والاختصاص في التفسير والفقه والحديث والعقيدة"
+      <ConfigurablePageHero
+        path="/teachers"
+        fallbackTitle="المعلمون"
+        fallbackSubtitle="نخبة من أهل العلم والاختصاص في التفسير والفقه والحديث والعقيدة"
       />
-      <Container className="grid gap-6 py-16 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-        {teachers.map((teacher) => (
-          <TeacherCard key={teacher.id} teacher={teacher} />
-        ))}
-      </Container>
+      <Suspense fallback={<p className="py-16 text-center text-muted">جاري التحميل...</p>}>
+        <TeachersPageContent teachers={teachers} />
+      </Suspense>
     </SiteLayout>
   );
 }

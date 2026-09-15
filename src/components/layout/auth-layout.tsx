@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { SiteLogoMark } from "@/components/layout/site-logo";
 import { LanguageSwitcher } from "@/components/ui/language-switcher";
+import { useSiteSettings } from "@/lib/use-site-settings";
 
 export function AuthLayout({
   title,
@@ -13,15 +14,22 @@ export function AuthLayout({
   subtitle?: string;
   children: React.ReactNode;
 }) {
+  const { settings } = useSiteSettings();
+
   return (
     <div className="flex min-h-screen flex-col lg:flex-row">
       <div className="relative hidden w-full flex-col items-center justify-center overflow-hidden bg-brand p-12 text-white lg:flex lg:w-1/2">
         <div className="islamic-pattern absolute inset-0 opacity-30" />
         <div className="relative text-center">
-          <SiteLogoMark size="lg" variant="dark" className="mx-auto mb-8 shadow-lg" />
-          <h1 className="text-3xl font-bold">معهد علم شرعي</h1>
+          <SiteLogoMark
+            logoUrl={settings?.logo}
+            size="lg"
+            variant="dark"
+            className="mx-auto mb-8 shadow-lg"
+          />
+          <h1 className="text-3xl font-bold">{settings?.site_name_ar || "معهد علم شرعي"}</h1>
           <p className="mx-auto mt-4 max-w-sm leading-8 text-white/80">
-            منارة للعلوم الشرعية — طلب العلم فريضة على كل مسلم
+            {settings?.tagline_ar || "منارة للعلوم الشرعية — طلب العلم فريضة على كل مسلم"}
           </p>
         </div>
       </div>

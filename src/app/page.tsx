@@ -24,15 +24,14 @@ export default async function HomePage() {
   return (
     <SiteLayout>
       <JsonLd data={websiteJsonLd()} />
-      <HeroSection
-        settings={data.settings}
-        slide={data.hero_slides[0]}
-        stats={data.stats}
-      />
+      <HeroSection slide={data.hero_slides[0]} />
       <InstituteIntroSection />
       <SearchSection />
       <ProgramsSection programs={data.programs} />
-      <CoursesSection courses={data.featured_courses} />
+      <CoursesSection
+        courses={data.featured_courses}
+        visible={data.homepage_featured_courses_visible}
+      />
       <TeachersSection teachers={data.teachers} />
       <TestimonialsSection testimonials={data.testimonials} />
       <FaqSection faqs={data.faqs} />

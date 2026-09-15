@@ -1,20 +1,14 @@
 import { Footer } from "@/components/layout/footer";
 import { Header } from "@/components/layout/header";
-import { api } from "@/lib/api";
+import { NavPageVisibilityGuard } from "@/components/layout/nav-page-visibility-guard";
 
-export async function SiteLayout({ children }: { children: React.ReactNode }) {
-  let settings;
-  try {
-    const { data } = await api.getSettings();
-    settings = data;
-  } catch {
-    settings = undefined;
-  }
-
+export function SiteLayout({ children }: { children: React.ReactNode }) {
   return (
     <>
-      <Header settings={settings} />
-      <main className="flex-1">{children}</main>
+      <Header />
+      <NavPageVisibilityGuard>
+        <main className="flex-1">{children}</main>
+      </NavPageVisibilityGuard>
       <Footer />
     </>
   );

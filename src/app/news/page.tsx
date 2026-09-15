@@ -1,6 +1,6 @@
 import { SiteLayout } from "@/components/layout/site-layout";
 import { ArticleCard } from "@/components/cards/article-card";
-import { PageHero } from "@/components/sections/page-hero";
+import { ConfigurablePageHero } from "@/components/sections/configurable-page-hero";
 import { Container } from "@/components/ui/container";
 import { api } from "@/lib/api";
 import { buildMetadata } from "@/lib/seo";
@@ -17,7 +17,11 @@ export default async function NewsPage() {
 
   return (
     <SiteLayout>
-      <PageHero title="الأخبار والإعلانات" subtitle="آخر مستجدات المعهد وأخبار البرامج والدورات الشرعية" />
+      <ConfigurablePageHero
+        path="/news"
+        fallbackTitle="الأخبار والإعلانات"
+        fallbackSubtitle="آخر مستجدات المعهد وأخبار البرامج والدورات الشرعية"
+      />
       <Container className="grid gap-6 py-16 sm:grid-cols-2 lg:grid-cols-3">
         {announcements.map((item) => (
           <ArticleCard key={item.id} article={item} />

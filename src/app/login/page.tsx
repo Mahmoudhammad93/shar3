@@ -9,18 +9,19 @@ import { Input } from "@/components/ui/input";
 import { PasswordInput } from "@/components/ui/password-input";
 import { useAuth } from "@/components/providers/auth-provider";
 import { authApi } from "@/lib/auth";
+import { getStudentDashboardPath } from "@/lib/student-auth";
 
 export default function LoginPage() {
   const router = useRouter();
-  const { isLoggedIn, loading: authLoading, refreshUser } = useAuth();
+  const { isLoggedIn, loading: authLoading, refreshUser, user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
   useEffect(() => {
     if (!authLoading && isLoggedIn) {
-      router.replace("/dashboard");
+      router.replace(getStudentDashboardPath(user));
     }
-  }, [authLoading, isLoggedIn, router]);
+  }, [authLoading, isLoggedIn, user, router]);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -28,9 +29,9 @@ export default function LoginPage() {
     setError("");
     const form = new FormData(e.currentTarget);
     try {
-      await authApi.login(form.get("email") as string, form.get("password") as string);
+      const res = await authApi.login(form.get("email") as string, form.get("password") as string);
       await refreshUser();
-      router.push("/dashboard");
+      router.push(getStudentDashboardPath(res.user));
     } catch (err) {
       setError(err instanceof Error ? err.message : "بيانات الدخول غير صحيحة");
     } finally {

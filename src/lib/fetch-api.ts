@@ -32,28 +32,34 @@ async function fetchWithTimeout(url: string, options?: RequestInit): Promise<Res
 
 export async function fetchApi<T>(path: string, options?: RequestInit): Promise<T> {
   const cacheKey = `${path}:${options?.method ?? "GET"}`;
+  const skipModuleCache =
+    process.env.NODE_ENV === "development" && (path.startsWith("/settings") || path.startsWith("/home"));
 
-  if (!responseCache.has(cacheKey)) {
-    responseCache.set(
-      cacheKey,
-      (async () => {
-        const res = await fetchWithTimeout(`${getApiUrl()}${path}`, {
-          ...options,
-          headers: {
-            "Content-Type": "application/json",
-            Accept: "application/json",
-            ...options?.headers,
-          },
-          cache: "force-cache",
-        });
+  if (skipModuleCache || !responseCache.has(cacheKey)) {
 
-        if (!res.ok) {
-          throw new Error(`API error: ${res.status} for ${path}`);
-        }
+    const request = (async () => {
+      const res = await fetchWithTimeout(`${getApiUrl()}${path}`, {
+        ...options,
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+          ...options?.headers,
+        },
+        cache: "force-cache",
+      });
 
-        return res.json() as Promise<T>;
-      })(),
-    );
+      if (!res.ok) {
+        throw new Error(`API error: ${res.status} for ${path}`);
+      }
+
+      return res.json() as Promise<T>;
+    })();
+
+    if (!skipModuleCache) {
+      responseCache.set(cacheKey, request);
+    }
+
+    return request;
   }
 
   return responseCache.get(cacheKey) as Promise<T>;
@@ -66,4 +72,23 @@ export async function fetchApiSafe<T>(path: string): Promise<T | null> {
     console.warn(`Failed to fetch ${path}:`, error);
     return null;
   }
+}
+
+/** Fetches fresh data at runtime (for client components on static export). */
+export async function fetchApiLive<T>(path: string, options?: RequestInit): Promise<T> {
+  const res = await fetchWithTimeout(`${getApiUrl()}${path}`, {
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "application/json",
+      ...options?.headers,
+    },
+    cache: "no-store",
+  });
+
+  if (!res.ok) {
+    throw new Error(`API error: ${res.status} for ${path}`);
+  }
+
+  return res.json() as Promise<T>;
 }

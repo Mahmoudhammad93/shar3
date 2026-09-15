@@ -38,11 +38,23 @@ const DEFAULTS: DashboardTheme = {
 
 function normalizeHex(color?: string | null, fallback = "#000000"): string {
   if (!color) return fallback;
-  const hex = color.trim();
-  if (/^#[0-9a-fA-F]{6}$/.test(hex)) return hex;
-  if (/^#[0-9a-fA-F]{3}$/.test(hex)) {
-    return `#${hex[1]}${hex[1]}${hex[2]}${hex[2]}${hex[3]}${hex[3]}`;
+
+  let hex = color.trim();
+
+  // Accept values like "d4ba84#" or "08254B" from admin inputs.
+  if (/^#[0-9a-fA-F]{3,6}#$/.test(hex)) {
+    hex = hex.slice(0, -1);
+  } else if (/^[0-9a-fA-F]{3,6}#$/.test(hex)) {
+    hex = `#${hex.slice(0, -1)}`;
+  } else if (/^[0-9a-fA-F]{3,6}$/.test(hex)) {
+    hex = `#${hex}`;
   }
+
+  if (/^#[0-9a-fA-F]{6}$/.test(hex)) return hex.toLowerCase();
+  if (/^#[0-9a-fA-F]{3}$/.test(hex)) {
+    return `#${hex[1]}${hex[1]}${hex[2]}${hex[2]}${hex[3]}${hex[3]}`.toLowerCase();
+  }
+
   return fallback;
 }
 
@@ -108,7 +120,13 @@ export function dashboardThemeCssVars(theme: DashboardTheme): CSSProperties {
     "--dashboard-sidebar": theme.sidebar,
     "--dashboard-background": theme.background,
     "--background": theme.background,
-  } as React.CSSProperties;
+    "--color-brand": theme.primary,
+    "--color-brand-dark": theme.primaryDark,
+    "--color-brand-light": theme.primaryLight,
+    "--color-gold": theme.accent,
+    "--color-gold-light": theme.accentLight,
+    "--color-background": theme.background,
+  } as CSSProperties;
 }
 
 export function dashboardShellClass(theme: DashboardTheme): string {

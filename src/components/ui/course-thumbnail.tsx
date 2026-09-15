@@ -9,6 +9,7 @@ const SLUG_GRADIENTS: Record<string, string> = {
   "fiqh-ibadat": "from-teal-700 to-teal-900",
   "ulum-al-hadith": "from-amber-800 to-amber-950",
   "islamic-aqeedah": "from-slate-700 to-slate-900",
+  "ahkam-altgoyd": "from-emerald-700 to-emerald-950",
 };
 
 function gradientForSlug(slug?: string): string {
@@ -52,8 +53,9 @@ export function CourseThumbnail({
           onError={() => setImageFailed(true)}
         />
       ) : (
-        <div className="flex h-full w-full items-center justify-center">
-          <BookOpen className="h-12 w-12 text-white/35" />
+        <div className="flex h-full w-full flex-col items-center justify-center px-6 text-center">
+          <BookOpen className="mb-3 h-10 w-10 text-white/35" />
+          <p className="line-clamp-2 text-lg font-bold leading-snug text-white/90">{title}</p>
         </div>
       )}
       <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-black/5 to-black/10" />

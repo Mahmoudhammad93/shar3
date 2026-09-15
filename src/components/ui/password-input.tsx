@@ -12,7 +12,7 @@ export function PasswordInput({ className, ...props }: React.ComponentProps<"inp
       <input
         type={visible ? "text" : "password"}
         className={cn(
-          "flex h-11 w-full rounded-xl border border-border bg-surface px-4 pe-11 text-sm text-foreground outline-none transition placeholder:text-muted focus:border-brand-light focus:ring-2 focus:ring-brand/10",
+          "flex h-11 w-full rounded-form border border-border bg-surface px-4 pe-11 text-sm text-foreground outline-none transition placeholder:text-muted focus:border-brand-light focus:ring-2 focus:ring-brand/10",
           className
         )}
         {...props}

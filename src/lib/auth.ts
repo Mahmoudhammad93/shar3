@@ -1,11 +1,22 @@
 import { getApiUrl } from "@/lib/api-url";
 
+export interface StudentAuthState {
+  id: number;
+  status: "pending" | "active" | "rejected" | "graduated" | "suspended" | "unknown";
+  status_label?: string;
+  rejection_reason?: string | null;
+  academic_level?: { id: number; name_ar: string; slug?: string } | null;
+  academic_year?: { id: number; name_ar: string; slug?: string; year_number?: number } | null;
+  current_semester?: { id: number; name_ar: string; semester_number: number } | null;
+}
+
 export interface AuthUser {
   id: number;
   name: string;
   email: string;
   role: string;
   student_id?: number;
+  student?: StudentAuthState | null;
 }
 
 function getToken(): string | null {
@@ -77,6 +88,10 @@ async function authFetch<T>(path: string, options: RequestInit = {}, { public: i
   }
 
   if (res.status === 401) {
+    if (isPublic) {
+      throw new Error(await parseApiError(res));
+    }
+
     const hadToken = !!getToken();
     if (hadToken) {
       clearToken();
@@ -87,7 +102,7 @@ async function authFetch<T>(path: string, options: RequestInit = {}, { public: i
         window.location.href = "/login";
       }
     }
-    throw new Error("Unauthorized");
+    throw new Error("انتهت الجلسة. يرجى تسجيل الدخول مرة أخرى.");
   }
 
   if (!res.ok) {
@@ -154,11 +169,9 @@ export const studentApi = {
     }),
 
   lessonQuiz: (lessonId: number) =>
-    authFetch<{ lesson_id: number; questions: { id: number; question_ar: string; options: { id: number; option_ar: string }[] }[] }>(
-      `/student/lessons/${lessonId}/quiz`,
-    ),
+    authFetch<{ lesson_id: number; questions: QuizQuestion[] }>(`/student/lessons/${lessonId}/quiz`),
 
-  submitLessonQuiz: (lessonId: number, answers: Record<number, number>) =>
+  submitLessonQuiz: (lessonId: number, answers: Record<number, number | string>) =>
     authFetch<{ message: string; passed: boolean }>(`/student/lessons/${lessonId}/quiz`, {
       method: "POST",
       body: JSON.stringify({ answers }),
@@ -184,6 +197,29 @@ export const studentApi = {
 
   profile: () => authFetch<{ user: { name: string; email: string }; student: StudentProfile }>("/student/profile"),
 
+  curriculum: () =>
+    authFetch<{
+      academic_level: { id: number; name_ar: string; slug: string } | null;
+      academic_year: { id: number; name_ar: string; slug: string; year_number: number } | null;
+      current_semester: { id: number; name_ar: string; semester_number: number } | null;
+      subjects: CurriculumSubject[];
+    }>("/student/curriculum"),
+
+  subject: (slug: string) =>
+    authFetch<{
+      subject: CurriculumSubject & { id: number };
+      course: {
+        id: number;
+        title_ar: string;
+        slug: string;
+        image?: string;
+        description_ar?: string;
+        teacher?: string;
+      };
+      progress: number;
+      lessons: StudentLesson[];
+    }>(`/student/subjects/${slug}`),
+
   updateProfile: (data: {
     name?: string;
     phone?: string;
@@ -192,6 +228,20 @@ export const studentApi = {
     city?: string;
   }) => authFetch<{ message: string; student: StudentProfile }>("/student/profile", { method: "PUT", body: JSON.stringify(data) }),
 };
+
+export interface CurriculumSubject {
+  subject_id: number;
+  name_ar: string;
+  slug: string;
+  primary_text_ar?: string | null;
+  supplementary_text_ar?: string | null;
+  memorization_ar?: string | null;
+  course?: {
+    id: number;
+    slug: string;
+    title_ar: string;
+  } | null;
+}
 
 export interface StudentProfile {
   first_name?: string | null;
@@ -220,6 +270,13 @@ export interface StudentProfile {
   status: number;
   status_label?: string;
   photo?: string | null;
+}
+
+export interface QuizQuestion {
+  id: number;
+  type: "choice" | "true_false" | "text";
+  question_ar: string;
+  options: { id: number; option_ar: string }[];
 }
 
 export interface StudentCourse {

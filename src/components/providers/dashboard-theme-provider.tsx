@@ -1,7 +1,7 @@
 "use client";
 
-import { createContext, useContext, useEffect, useMemo, useState } from "react";
-import { api } from "@/lib/api";
+import { createContext, useContext, useMemo } from "react";
+import { useSiteSettings } from "@/lib/use-site-settings";
 import {
   buildDashboardTheme,
   dashboardShellClass,
@@ -20,28 +20,20 @@ interface DashboardThemeContextValue {
 const DashboardThemeContext = createContext<DashboardThemeContextValue | null>(null);
 
 export function DashboardThemeProvider({ children }: { children: React.ReactNode }) {
-  const [settings, setSettings] = useState<SiteSettings | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  async function refresh() {
-    try {
-      const { data } = await api.getSettings();
-      setSettings(data);
-    } catch {
-      setSettings(null);
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  useEffect(() => {
-    refresh();
-  }, []);
-
+  const { settings, loading } = useSiteSettings();
   const theme = useMemo(() => buildDashboardTheme(settings), [settings]);
 
   return (
-    <DashboardThemeContext.Provider value={{ settings, theme, loading, refresh }}>
+    <DashboardThemeContext.Provider
+      value={{
+        settings,
+        theme,
+        loading,
+        refresh: async () => {
+          /* settings refresh is handled by SiteSettingsProvider */
+        },
+      }}
+    >
       <div
         className={dashboardShellClass(theme)}
         style={dashboardThemeCssVars(theme)}

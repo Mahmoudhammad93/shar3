@@ -1,15 +1,30 @@
 "use client";
 
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { CourseCard } from "@/components/cards/course-card";
 import { SearchBar } from "@/components/ui";
 import { Container } from "@/components/ui/container";
+import { api } from "@/lib/api";
 import type { Course } from "@/types";
 
-export function CoursesPageContent({ courses }: { courses: Course[] }) {
+export function CoursesPageContent({ courses: initialCourses }: { courses: Course[] }) {
+  const [courses, setCourses] = useState(initialCourses);
   const searchParams = useSearchParams();
   const search = searchParams.get("search")?.trim() ?? "";
+
+  useEffect(() => {
+    api
+      .getCoursesLive()
+      .then((response) => {
+        if (response.data.length > 0) {
+          setCourses(response.data);
+        }
+      })
+      .catch(() => {
+        /* keep build-time fallback */
+      });
+  }, []);
 
   const filteredCourses = useMemo(() => {
     if (!search) return courses;

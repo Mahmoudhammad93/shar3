@@ -2,7 +2,10 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { GraduationCap, LogOut } from "lucide-react";
+import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
+import { AnimatePresence, motion } from "framer-motion";
+import { LogOut } from "lucide-react";
 import { cn } from "@/lib/cn";
 import {
   DASHBOARD_NAV_GROUPS,
@@ -13,23 +16,28 @@ import {
 import { useAuth } from "@/components/providers/auth-provider";
 import { useLocale } from "@/components/providers/locale-provider";
 import { useDashboardTheme } from "@/components/providers/dashboard-theme-provider";
+import { SiteLogoMark } from "@/components/layout/site-logo";
 import { getDashboardNavLabel } from "@/lib/i18n/dashboard-nav";
 import type { SiteSettings } from "@/types";
 import "./dashboard-sidebar.css";
 
-const DEFAULT_INSTITUTE = { ar: "معهد العلوم الشرعية", en: "Share3a Institute" };
-const DEFAULT_YEAR = { ar: "العام الدراسي ١٤٤٦ هـ", en: "Academic Year 1446 AH" };
+export const DASHBOARD_SIDEBAR_WIDTH_PX = 300;
+
+const DEFAULT_INSTITUTE = { ar: "معهد علم شرعي", en: "Share3a Institute" };
+const DEFAULT_TAGLINE = { ar: "منارة للعلوم الشرعية", en: "A beacon of Islamic knowledge" };
 
 function NavLink({
   item,
   active,
   label,
   sidebarStyle,
+  onNavigate,
 }: {
   item: DashboardNavItem;
   active: boolean;
   label: string;
   sidebarStyle: "dark" | "light";
+  onNavigate?: () => void;
 }) {
   const Icon = item.icon;
   const isLight = sidebarStyle === "light";
@@ -64,14 +72,20 @@ function NavLink({
 
   if (item.external) {
     return (
-      <a href={item.href} target="_blank" rel="noopener noreferrer" className={className}>
+      <a
+        href={item.href}
+        target="_blank"
+        rel="noopener noreferrer"
+        className={className}
+        onClick={onNavigate}
+      >
         {content}
       </a>
     );
   }
 
   return (
-    <Link href={item.href} className={className}>
+    <Link href={item.href} className={className} onClick={onNavigate}>
       {content}
     </Link>
   );
@@ -83,7 +97,51 @@ function isItemVisible(item: DashboardNavItem, settings: SiteSettings | null): b
   return value !== false;
 }
 
-export function DashboardSidebar() {
+function DashboardSidebarBackdrop({ open, onClose }: { open: boolean; onClose: () => void }) {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (!open) return;
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [open]);
+
+  if (!mounted) return null;
+
+  return createPortal(
+    <AnimatePresence>
+      {open && (
+        <motion.button
+          type="button"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 z-[90] bg-black/50 lg:hidden"
+          aria-label="Close menu"
+          onClick={onClose}
+        />
+      )}
+    </AnimatePresence>,
+    document.body
+  );
+}
+
+export function DashboardSidebar({
+  mobileOpen = false,
+  onClose,
+}: {
+  mobileOpen?: boolean;
+  onClose?: () => void;
+}) {
   const pathname = usePathname();
   const router = useRouter();
   const { user, logout } = useAuth();
@@ -92,58 +150,65 @@ export function DashboardSidebar() {
 
   const instituteName =
     locale === "en"
-      ? settings?.dashboard_institute_name_en ||
-        settings?.site_name_en ||
+      ? settings?.site_name_en ||
+        settings?.dashboard_institute_name_en ||
         DEFAULT_INSTITUTE.en
-      : settings?.dashboard_institute_name_ar ||
-        settings?.site_name_ar ||
+      : settings?.site_name_ar ||
+        settings?.dashboard_institute_name_ar ||
         DEFAULT_INSTITUTE.ar;
 
-  const academicYear =
+  const instituteSubtitle =
     locale === "en"
-      ? settings?.academic_year_en || DEFAULT_YEAR.en
-      : settings?.academic_year_ar || DEFAULT_YEAR.ar;
+      ? settings?.tagline_en ||
+        settings?.academic_year_en ||
+        DEFAULT_TAGLINE.en
+      : settings?.tagline_ar ||
+        settings?.academic_year_ar ||
+        DEFAULT_TAGLINE.ar;
 
   const isLightSidebar = theme.sidebarStyle === "light";
+  const closeSidebar = () => onClose?.();
 
   return (
-    <aside
-      className={cn(
-        "fixed inset-y-0 start-0 z-40 flex w-[272px] min-h-0 flex-col overflow-hidden shadow-xl",
-        isLightSidebar ? "border-e border-border bg-surface text-brand-dark" : "text-white"
-      )}
-      style={!isLightSidebar ? { backgroundColor: "var(--dashboard-sidebar, #0a3d34)" } : undefined}
-    >
+    <>
+      <DashboardSidebarBackdrop open={mobileOpen} onClose={closeSidebar} />
+      <aside
+        className={cn(
+          "fixed inset-y-0 start-0 z-[91] flex min-h-0 flex-col shadow-xl transition-transform duration-300 ease-in-out lg:z-40",
+          !mobileOpen && "max-lg:ltr:-translate-x-full max-lg:rtl:translate-x-full",
+          isLightSidebar ? "border-e border-border text-brand-dark" : "text-white"
+        )}
+        style={{
+          width: DASHBOARD_SIDEBAR_WIDTH_PX,
+          backgroundColor: "var(--dashboard-sidebar, #0a3d34)",
+        }}
+      >
       {theme.showPattern && !isLightSidebar && (
         <div className="islamic-pattern absolute inset-0 opacity-[0.08]" />
       )}
 
       <div
         className={cn(
-          "relative border-b px-5 py-5",
+          "relative shrink-0 border-b px-4 py-5",
           isLightSidebar ? "border-border" : "border-white/10"
         )}
       >
-        <Link href="/" className="flex items-center gap-3">
-          {theme.logoUrl ? (
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full bg-white/10 p-1">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={theme.logoUrl} alt={instituteName} className="h-full w-full object-contain" />
-            </div>
-          ) : (
-            <div
+        <Link href="/" className="flex flex-col items-center gap-3 text-center">
+          <SiteLogoMark
+            logoUrl={settings?.logo ?? theme.logoUrl}
+            size="md"
+            variant="dark"
+            className="rounded-full shadow-md"
+          />
+          <div className="w-full overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            <p className="whitespace-nowrap text-[12px] font-bold leading-tight">{instituteName}</p>
+            <p
               className={cn(
-                "flex h-11 w-11 shrink-0 items-center justify-center rounded-full",
-                isLightSidebar ? "bg-brand/10 text-brand" : "bg-gold/15 text-gold"
+                "mt-1 whitespace-nowrap text-[11px] leading-tight",
+                isLightSidebar ? "text-muted" : "text-white/50"
               )}
             >
-              <GraduationCap className="h-5 w-5" />
-            </div>
-          )}
-          <div className="min-w-0">
-            <p className="truncate text-[13px] font-bold leading-tight">{instituteName}</p>
-            <p className={cn("mt-0.5 text-[11px]", isLightSidebar ? "text-muted" : "text-white/50")}>
-              {academicYear}
+              {instituteSubtitle}
             </p>
           </div>
         </Link>
@@ -182,6 +247,7 @@ export function DashboardSidebar() {
                     label={getDashboardNavLabel(locale, item.labelKey)}
                     active={!item.external && isDashboardNavActive(pathname, item)}
                     sidebarStyle={theme.sidebarStyle}
+                    onNavigate={closeSidebar}
                   />
                 ))}
               </div>
@@ -203,6 +269,7 @@ export function DashboardSidebar() {
             label={getDashboardNavLabel(locale, DASHBOARD_SUPPORT_ITEM.labelKey)}
             active={isDashboardNavActive(pathname, DASHBOARD_SUPPORT_ITEM)}
             sidebarStyle={theme.sidebarStyle}
+            onNavigate={closeSidebar}
           />
         </div>
       </nav>
@@ -228,5 +295,6 @@ export function DashboardSidebar() {
         </button>
       </div>
     </aside>
+    </>
   );
 }

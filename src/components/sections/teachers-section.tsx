@@ -1,12 +1,31 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import type { Teacher } from "@/types";
 import { TeacherCard } from "@/components/cards/teacher-card";
 import { Container } from "@/components/ui/container";
 import { Section, SectionHeader } from "@/components/ui/section";
 import { StaggerContainer, StaggerItem } from "@/components/motion/fade-in";
+import { api } from "@/lib/api";
 
-export function TeachersSection({ teachers }: { teachers: Teacher[] }) {
+export function TeachersSection({ teachers: initialTeachers }: { teachers: Teacher[] }) {
+  const [teachers, setTeachers] = useState(initialTeachers);
+
+  useEffect(() => {
+    api
+      .getFeaturedTeachersLive()
+      .then((featured) => {
+        setTeachers(featured);
+      })
+      .catch(() => {
+        /* keep build-time fallback */
+      });
+  }, []);
+
+  if (teachers.length === 0) {
+    return null;
+  }
+
   return (
     <Section>
       <SectionHeader

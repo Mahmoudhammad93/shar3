@@ -1,10 +1,9 @@
-import { Mail, MapPin, Phone } from "lucide-react";
 import { SiteLayout } from "@/components/layout/site-layout";
+import { ContactInfo } from "@/components/contact/contact-info";
 import { ContactForm } from "@/components/forms/contact-form";
-import { PageHero } from "@/components/sections/page-hero";
+import { ConfigurablePageHero } from "@/components/sections/configurable-page-hero";
 import { Container } from "@/components/ui/container";
 import { Card, CardContent } from "@/components/ui/card";
-import { api } from "@/lib/api";
 import { buildMetadata } from "@/lib/seo";
 
 export const metadata = buildMetadata({
@@ -14,42 +13,17 @@ export const metadata = buildMetadata({
   path: "/contact/",
 });
 
-export default async function ContactPage() {
-  const { data: settings } = await api.getSettings();
-
+export default function ContactPage() {
   return (
     <SiteLayout>
-      <PageHero
-        title="تواصل معنا"
-        subtitle="نسعد باستقبال استفساراتكم حول الدورات والبرامج الشرعية والتسجيل في المعهد"
+      <ConfigurablePageHero
+        path="/contact"
+        fallbackTitle="تواصل معنا"
+        fallbackSubtitle="نسعد باستقبال استفساراتكم حول الدورات والبرامج الشرعية والتسجيل في المعهد"
       />
       <Container className="grid gap-10 py-16 lg:grid-cols-2">
         <div className="space-y-6">
-          <Card>
-            <CardContent className="p-6">
-              <h3 className="mb-4 font-bold text-brand-dark">معلومات التواصل</h3>
-              <ul className="space-y-4 text-sm text-muted">
-                {settings.phone && (
-                  <li className="flex items-center gap-3">
-                    <Phone className="h-4 w-4 shrink-0 text-gold" />
-                    <span dir="ltr">{settings.phone}</span>
-                  </li>
-                )}
-                {settings.email && (
-                  <li className="flex items-center gap-3">
-                    <Mail className="h-4 w-4 shrink-0 text-gold" />
-                    {settings.email}
-                  </li>
-                )}
-                {settings.address_ar && (
-                  <li className="flex items-start gap-3">
-                    <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-gold" />
-                    {settings.address_ar}
-                  </li>
-                )}
-              </ul>
-            </CardContent>
-          </Card>
+          <ContactInfo />
           <Card className="bg-brand text-white">
             <CardContent className="p-6">
               <h3 className="mb-3 font-bold text-gold">ساعات العمل</h3>

@@ -32,11 +32,11 @@ export function DashboardWelcomeBanner({
   return (
     <div
       className={cn(
-        "relative mb-8 overflow-hidden rounded-2xl px-6 py-8 text-white md:px-10 md:py-10",
+        "relative mb-6 overflow-hidden rounded-2xl px-4 py-6 text-white sm:mb-8 sm:px-6 sm:py-8 md:px-10 md:py-10",
         theme.style === "minimal" && "shadow-none",
         theme.style === "modern" && "shadow-lg"
       )}
-      style={{ backgroundColor: "var(--dashboard-sidebar, #0a3d34)" }}
+      style={{ backgroundColor: "var(--brand-primary, #004d40)" }}
     >
       {theme.showPattern && <div className="islamic-pattern absolute inset-0 opacity-[0.15]" />}
       <div
@@ -51,7 +51,7 @@ export function DashboardWelcomeBanner({
         <p className="text-sm text-gold/90">
           {locale === "en" ? "In the name of Allah, the Most Gracious, the Most Merciful" : "بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ"}
         </p>
-        <h1 className="mt-4 text-3xl font-bold md:text-4xl">
+        <h1 className="mt-4 text-2xl font-bold sm:text-3xl md:text-4xl">
           {locale === "en" ? `Welcome, ${name}` : `مرحباً بك، ${name}`}
         </h1>
         <p className="mx-auto mt-4 max-w-2xl text-sm leading-8 text-white/75 md:text-base">
