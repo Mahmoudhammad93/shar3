@@ -17,6 +17,10 @@
 /.next/
 /out/
 
+# generated deployment archives
+/out.zip
+/*.tar.gz
+
 # production
 /build
 
