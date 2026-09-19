@@ -3,6 +3,7 @@ import { StudyPlanIndex } from "@/components/study-plan/study-plan-index";
 import { cn } from "@/lib/cn";
 import {
   getStudyPlanSemesterAnchorId,
+  getStudyPlanSpecializationAnchorId,
   getStudyPlanYearAnchorId,
   type StudyPlanIndexYear,
 } from "@/lib/study-plan-anchors";
@@ -69,7 +70,13 @@ function SubjectMobileCard({ subject }: { subject: StudyPlanSubject }) {
   );
 }
 
-function YearStudyMobile({ sectionKey, semesters }: { sectionKey: string; semesters: StudyPlanSemester[] }) {
+function SemesterSubjectsMobile({
+  sectionKey,
+  semesters,
+}: {
+  sectionKey: string;
+  semesters: StudyPlanSemester[];
+}) {
   const activeSemesters = semesters.filter((semester) => semester.subjects.length > 0);
 
   return (
@@ -92,7 +99,13 @@ function YearStudyMobile({ sectionKey, semesters }: { sectionKey: string; semest
   );
 }
 
-function YearStudyTableDesktop({ sectionKey, semesters }: { sectionKey: string; semesters: StudyPlanSemester[] }) {
+function SemesterSubjectsDesktop({
+  sectionKey,
+  semesters,
+}: {
+  sectionKey: string;
+  semesters: StudyPlanSemester[];
+}) {
   const activeSemesters = semesters.filter((semester) => semester.subjects.length > 0);
 
   return (
@@ -107,7 +120,7 @@ function YearStudyTableDesktop({ sectionKey, semesters }: { sectionKey: string; 
         <thead>
           <tr className="border-b-2 border-border bg-brand/[0.07]">
             <th className={cn(TABLE_HEAD, "text-center")}>الفصل</th>
-            <th className={TABLE_HEAD}>المادة</th>
+            <th className={TABLE_HEAD}>المقرر</th>
             <th className={TABLE_HEAD}>اسم الكتاب</th>
             <th className={TABLE_HEAD}>المحاضر</th>
           </tr>
@@ -157,21 +170,181 @@ function YearStudyTableDesktop({ sectionKey, semesters }: { sectionKey: string; 
   );
 }
 
-function YearStudyTable({
-  sectionKey,
-  yearName,
-  semesters,
-}: {
+type SpecializationBlock = {
+  id: number;
+  name_ar: string;
+  slug: string;
   sectionKey: string;
-  yearName: string;
   semesters: StudyPlanSemester[];
-}) {
-  const activeSemesters = semesters.filter((semester) => semester.subjects.length > 0);
+};
 
-  if (activeSemesters.length === 0) {
-    return null;
+type StudyPlanYearBlock = {
+  id: number;
+  name_ar: string;
+  year_number: number;
+  sectionKey: string;
+  levelName?: string;
+  /** General years: subjects live directly under year semesters. */
+  semesters: StudyPlanSemester[];
+  /** Specialized years: one year card, many specializations inside. */
+  specializations: SpecializationBlock[];
+};
+
+function hasSemesterSubjects(semesters: StudyPlanSemester[]): boolean {
+  return semesters.some((semester) => semester.subjects.length > 0);
+}
+
+function collectYearBlocks(levels: AcademicLevel[]): StudyPlanYearBlock[] {
+  const blocks: StudyPlanYearBlock[] = [];
+
+  for (const level of levels) {
+    for (const year of level.years ?? []) {
+      if (!hasSemesterSubjects(year.semesters)) {
+        continue;
+      }
+
+      blocks.push({
+        id: year.id,
+        name_ar: year.name_ar,
+        year_number: year.year_number,
+        sectionKey: `${level.slug}-${year.slug}`,
+        levelName: level.name_ar,
+        semesters: year.semesters,
+        specializations: [],
+      });
+    }
+
+    if (!level.specializations?.length) {
+      continue;
+    }
+
+    // Group specialization curricula under a single academic year (no repeated year cards).
+    const byYear = new Map<
+      number,
+      {
+        year: StudyPlanYear;
+        specializations: Array<{ id: number; name_ar: string; slug: string; semesters: StudyPlanSemester[]; sort: number }>;
+      }
+    >();
+
+    level.specializations.forEach((specialization, specIndex) => {
+      for (const year of specialization.years ?? []) {
+        if (!hasSemesterSubjects(year.semesters)) {
+          continue;
+        }
+
+        const existing = byYear.get(year.id);
+        if (existing) {
+          existing.specializations.push({
+            id: specialization.id,
+            name_ar: specialization.name_ar,
+            slug: specialization.slug,
+            semesters: year.semesters,
+            sort: specIndex,
+          });
+        } else {
+          byYear.set(year.id, {
+            year,
+            specializations: [
+              {
+                id: specialization.id,
+                name_ar: specialization.name_ar,
+                slug: specialization.slug,
+                semesters: year.semesters,
+                sort: specIndex,
+              },
+            ],
+          });
+        }
+      }
+    });
+
+    const specializedBlocks = [...byYear.values()]
+      .sort((a, b) => a.year.year_number - b.year.year_number)
+      .map(({ year, specializations }) => ({
+        id: year.id,
+        name_ar: year.name_ar,
+        year_number: year.year_number,
+        sectionKey: `${level.slug}-year-${year.year_number}`,
+        levelName: level.name_ar,
+        semesters: [] as StudyPlanSemester[],
+        specializations: specializations
+          .sort((a, b) => a.sort - b.sort)
+          .map((specialization) => ({
+            id: specialization.id,
+            name_ar: specialization.name_ar,
+            slug: specialization.slug,
+            sectionKey: `${level.slug}-year-${year.year_number}-${specialization.slug}`,
+            semesters: specialization.semesters,
+          })),
+      }));
+
+    blocks.push(...specializedBlocks);
   }
 
+  return blocks.sort((a, b) => a.year_number - b.year_number);
+}
+
+function countSubjects(levels: AcademicLevel[]): number {
+  return collectYearBlocks(levels).reduce((sum, year) => {
+    const general = year.semesters.reduce(
+      (semesterSum, semester) => semesterSum + semester.subjects.length,
+      0,
+    );
+    const specialized = year.specializations.reduce(
+      (specSum, specialization) =>
+        specSum +
+        specialization.semesters.reduce(
+          (semesterSum, semester) => semesterSum + semester.subjects.length,
+          0,
+        ),
+      0,
+    );
+
+    return sum + general + specialized;
+  }, 0);
+}
+
+/** Distinct program years (1–5), not per-specialization table sections. */
+export function countStudyPlanYears(levels: AcademicLevel[]): number {
+  return new Set(
+    collectYearBlocks(levels)
+      .filter((year) => year.year_number != null)
+      .map((year) => year.year_number),
+  ).size;
+}
+
+function buildIndexYears(years: StudyPlanYearBlock[]): StudyPlanIndexYear[] {
+  return years.map((year) => ({
+    anchorId: getStudyPlanYearAnchorId(year.sectionKey),
+    name: year.name_ar,
+    levelName: year.levelName,
+    semesters: year.semesters
+      .filter((semester) => semester.subjects.length > 0)
+      .map((semester) => ({
+        anchorId: getStudyPlanSemesterAnchorId(year.sectionKey, semester.slug),
+        name: semester.name_ar,
+      })),
+    specializations: year.specializations.map((specialization) => ({
+      anchorId: getStudyPlanSpecializationAnchorId(specialization.sectionKey),
+      name: specialization.name_ar,
+      semesters: specialization.semesters
+        .filter((semester) => semester.subjects.length > 0)
+        .map((semester) => ({
+          anchorId: getStudyPlanSemesterAnchorId(specialization.sectionKey, semester.slug),
+          name: semester.name_ar,
+        })),
+    })),
+  }));
+}
+
+function YearStudyCard({
+  yearName,
+  children,
+}: {
+  yearName: string;
+  children: React.ReactNode;
+}) {
   return (
     <section className="overflow-hidden rounded-2xl border border-border bg-surface shadow-[var(--shadow-card)]">
       <div className="relative bg-brand px-6 py-5 text-center">
@@ -179,86 +352,13 @@ function YearStudyTable({
         <h2 className="relative text-xl font-bold text-white md:text-2xl">{yearName}</h2>
         <div className="relative mx-auto mt-3 h-1 w-16 rounded-full bg-gold" />
       </div>
-
-      <YearStudyMobile sectionKey={sectionKey} semesters={semesters} />
-      <YearStudyTableDesktop sectionKey={sectionKey} semesters={semesters} />
+      {children}
     </section>
   );
 }
 
-type StudyPlanYearSection = StudyPlanYear & { levelName: string; sectionKey: string };
-
-function collectYears(levels: AcademicLevel[]): StudyPlanYearSection[] {
-  return levels.flatMap((level) => {
-    const generalYears = (level.years ?? []).map((year) => ({
-      ...year,
-      levelName: level.name_ar,
-      sectionKey: `${level.slug}-${year.slug}`,
-    }));
-
-    const specializationYears = (level.specializations ?? [])
-      .flatMap((specialization, specIndex) =>
-        (specialization.years ?? []).map((year) => ({
-          ...year,
-          levelName: `${level.name_ar} — ${specialization.name_ar}`,
-          sectionKey: `${level.slug}-${specialization.slug}-${year.slug}`,
-          specIndex,
-        })),
-      )
-      .sort((a, b) => {
-        if (a.year_number !== b.year_number) {
-          return a.year_number - b.year_number;
-        }
-
-        return a.specIndex - b.specIndex;
-      });
-
-    return [...generalYears, ...specializationYears];
-  });
-}
-
-function countSubjects(levels: AcademicLevel[]): number {
-  return collectYears(levels).reduce(
-    (sum, year) =>
-      sum +
-      year.semesters.reduce((semesterSum, semester) => semesterSum + semester.subjects.length, 0),
-    0
-  );
-}
-
-/** Distinct program years (1–5), not per-specialization table sections. */
-export function countStudyPlanYears(levels: AcademicLevel[]): number {
-  const yearNumbers = new Set<number>();
-
-  for (const year of collectYears(levels)) {
-    const hasSubjects = year.semesters.some((semester) => semester.subjects.length > 0);
-    if (!hasSubjects || year.year_number == null) {
-      continue;
-    }
-    yearNumbers.add(year.year_number);
-  }
-
-  return yearNumbers.size;
-}
-
-function buildIndexYears(years: StudyPlanYearSection[]): StudyPlanIndexYear[] {
-  return years.map((year) => ({
-    anchorId: getStudyPlanYearAnchorId(year.sectionKey),
-    name: year.name_ar,
-    levelName: year.levelName || undefined,
-    semesters: year.semesters
-      .filter((semester) => semester.subjects.length > 0)
-      .map((semester) => ({
-        anchorId: getStudyPlanSemesterAnchorId(year.sectionKey, semester.slug),
-        name: semester.name_ar,
-      })),
-  }));
-}
-
 export function StudyPlanTables({ levels }: { levels: AcademicLevel[] }) {
-  const yearsWithContent = collectYears(levels).filter((year) =>
-    year.semesters.some((semester) => semester.subjects.length > 0),
-  );
+  const yearsWithContent = collectYearBlocks(levels);
 
   if (yearsWithContent.length === 0) {
     return (
@@ -278,10 +378,41 @@ export function StudyPlanTables({ levels }: { levels: AcademicLevel[] }) {
           id={getStudyPlanYearAnchorId(year.sectionKey)}
           className="scroll-mt-24 space-y-3"
         >
-          {year.levelName && (
-            <p className="text-sm font-medium text-gold">{year.levelName}</p>
+          {year.levelName && <p className="text-sm font-medium text-gold">{year.levelName}</p>}
+
+          {year.specializations.length > 0 ? (
+            <YearStudyCard yearName={year.name_ar}>
+              <div className="divide-y divide-border/80">
+                {year.specializations.map((specialization) => (
+                  <div
+                    key={specialization.sectionKey}
+                    id={getStudyPlanSpecializationAnchorId(specialization.sectionKey)}
+                    className="scroll-mt-24"
+                  >
+                    <div className="border-b border-border/80 bg-brand/[0.04] px-4 py-3 text-center md:px-6 md:text-start">
+                      <h3 className="text-base font-bold text-brand-dark md:text-lg">
+                        {specialization.name_ar}
+                      </h3>
+                      <p className="mt-0.5 text-xs text-muted">تخصص</p>
+                    </div>
+                    <SemesterSubjectsMobile
+                      sectionKey={specialization.sectionKey}
+                      semesters={specialization.semesters}
+                    />
+                    <SemesterSubjectsDesktop
+                      sectionKey={specialization.sectionKey}
+                      semesters={specialization.semesters}
+                    />
+                  </div>
+                ))}
+              </div>
+            </YearStudyCard>
+          ) : (
+            <YearStudyCard yearName={year.name_ar}>
+              <SemesterSubjectsMobile sectionKey={year.sectionKey} semesters={year.semesters} />
+              <SemesterSubjectsDesktop sectionKey={year.sectionKey} semesters={year.semesters} />
+            </YearStudyCard>
           )}
-          <YearStudyTable sectionKey={year.sectionKey} yearName={year.name_ar} semesters={year.semesters} />
         </div>
       ))}
     </div>

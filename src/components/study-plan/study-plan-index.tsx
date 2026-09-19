@@ -39,7 +39,45 @@ export function StudyPlanIndex({ years }: { years: StudyPlanIndexYear[] }) {
               />
             </button>
 
-            {year.semesters.length > 0 && (
+            {year.specializations.length > 0 ? (
+              <ul className="mt-3 space-y-3 border-s-2 border-gold/25 ps-3">
+                {year.specializations.map((specialization) => (
+                  <li key={specialization.anchorId}>
+                    <button
+                      type="button"
+                      onClick={() => scrollToStudyPlanSection(specialization.anchorId)}
+                      className={cn(
+                        "flex w-full items-center justify-between gap-2 rounded-form px-2 py-1.5 text-start text-sm font-semibold text-brand-dark transition",
+                        "hover:bg-brand/5 hover:text-brand",
+                      )}
+                    >
+                      <span>{specialization.name}</span>
+                      <ChevronLeft className="h-3.5 w-3.5 shrink-0 opacity-60" strokeWidth={1.75} />
+                    </button>
+
+                    {specialization.semesters.length > 0 && (
+                      <ul className="mt-1.5 space-y-1 border-s border-border/70 ps-3">
+                        {specialization.semesters.map((semester) => (
+                          <li key={semester.anchorId}>
+                            <button
+                              type="button"
+                              onClick={() => scrollToStudyPlanSection(semester.anchorId)}
+                              className={cn(
+                                "flex w-full items-center justify-between gap-2 rounded-form px-2 py-1.5 text-start text-sm text-muted transition",
+                                "hover:bg-brand/5 hover:text-brand-dark",
+                              )}
+                            >
+                              <span>{semester.name}</span>
+                              <ChevronLeft className="h-3.5 w-3.5 shrink-0 opacity-60" strokeWidth={1.75} />
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            ) : year.semesters.length > 0 ? (
               <ul className="mt-3 space-y-1.5 border-s-2 border-gold/25 ps-3">
                 {year.semesters.map((semester) => (
                   <li key={semester.anchorId}>
@@ -57,7 +95,7 @@ export function StudyPlanIndex({ years }: { years: StudyPlanIndexYear[] }) {
                   </li>
                 ))}
               </ul>
-            )}
+            ) : null}
           </li>
         ))}
       </ul>
