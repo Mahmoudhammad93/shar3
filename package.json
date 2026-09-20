@@ -9,6 +9,9 @@
     "export": "next build",
     "start": "next start",
     "lint": "eslint",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit",
     "postinstall": "patch-package",
     "verify:empty-catalog-export": "node scripts/verify-empty-catalog-export.mjs",
     "verify:static-params": "node scripts/verify-static-params.mjs",
@@ -40,6 +43,7 @@
     "eslint-config-next": "16.2.6",
     "patch-package": "^8.0.1",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^3.2.4"
   }
 }
