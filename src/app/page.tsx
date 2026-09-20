@@ -20,21 +20,27 @@ export const metadata = buildMetadata({
 
 export default async function HomePage() {
   const data = await api.getHome();
+  const heroSlides = data.hero_slides ?? [];
+  const programs = data.programs ?? [];
+  const featuredCourses = data.featured_courses ?? [];
+  const teachers = data.teachers ?? [];
+  const testimonials = data.testimonials ?? [];
+  const faqs = data.faqs ?? [];
 
   return (
     <SiteLayout>
       <JsonLd data={websiteJsonLd()} />
-      <HeroSection slide={data.hero_slides[0]} />
+      <HeroSection slide={heroSlides[0]} />
       <InstituteIntroSection />
       <SearchSection />
-      <ProgramsSection programs={data.programs} />
+      <ProgramsSection programs={programs} />
       <CoursesSection
-        courses={data.featured_courses}
+        courses={featuredCourses}
         visible={data.homepage_featured_courses_visible}
       />
-      <TeachersSection teachers={data.teachers} />
-      <TestimonialsSection testimonials={data.testimonials} />
-      <FaqSection faqs={data.faqs} />
+      <TeachersSection teachers={teachers} />
+      <TestimonialsSection testimonials={testimonials} />
+      <FaqSection faqs={faqs} />
       <CtaSection />
     </SiteLayout>
   );
