@@ -23,9 +23,13 @@ export default async function NewsPage() {
         fallbackSubtitle="آخر مستجدات المعهد وأخبار البرامج والدورات الشرعية"
       />
       <Container className="grid gap-6 py-16 sm:grid-cols-2 lg:grid-cols-3">
-        {announcements.map((item) => (
-          <ArticleCard key={item.id} article={item} />
-        ))}
+        {announcements.length === 0 ? (
+          <p className="col-span-full py-16 text-center text-muted">لا توجد أخبار أو إعلانات حالياً.</p>
+        ) : (
+          announcements.map((item) => (
+            <ArticleCard key={item.id} article={item} />
+          ))
+        )}
       </Container>
     </SiteLayout>
   );
