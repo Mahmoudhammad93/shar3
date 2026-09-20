@@ -1,0 +1,26 @@
+diff --git a/node_modules/next/dist/build/index.js b/node_modules/next/dist/build/index.js
+index 065c9b6..22776a9 100644
+--- a/node_modules/next/dist/build/index.js
++++ b/node_modules/next/dist/build/index.js
+@@ -1356,7 +1356,7 @@ async function build(dir, experimentalAnalyze = false, reactProductionProfiling
+                                             }
+                                             const appConfig = workerResult.appConfig || {};
+                                             if (appConfig.revalidate !== 0) {
+-                                                const hasGenerateStaticParams = workerResult.prerenderedRoutes && workerResult.prerenderedRoutes.length > 0;
++                                                const hasGenerateStaticParams = Array.isArray(workerResult.prerenderedRoutes);
+                                                 if (config.output === 'export' && isDynamic && !hasGenerateStaticParams) {
+                                                     throw Object.defineProperty(new Error(`Page "${page}" is missing "generateStaticParams()" so it cannot be used with "output: export" config.`), "__NEXT_ERROR_CODE", {
+                                                         value: "E87",
+diff --git a/node_modules/next/dist/esm/build/index.js b/node_modules/next/dist/esm/build/index.js
+index bbfc94d..cb97ac5 100644
+--- a/node_modules/next/dist/esm/build/index.js
++++ b/node_modules/next/dist/esm/build/index.js
+@@ -1288,7 +1288,7 @@ export default async function build(dir, experimentalAnalyze = false, reactProdu
+                                             }
+                                             const appConfig = workerResult.appConfig || {};
+                                             if (appConfig.revalidate !== 0) {
+-                                                const hasGenerateStaticParams = workerResult.prerenderedRoutes && workerResult.prerenderedRoutes.length > 0;
++                                                const hasGenerateStaticParams = Array.isArray(workerResult.prerenderedRoutes);
+                                                 if (config.output === 'export' && isDynamic && !hasGenerateStaticParams) {
+                                                     throw Object.defineProperty(new Error(`Page "${page}" is missing "generateStaticParams()" so it cannot be used with "output: export" config.`), "__NEXT_ERROR_CODE", {
+                                                         value: "E87",

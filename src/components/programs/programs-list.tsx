@@ -22,6 +22,14 @@ export function ProgramsList({ initialPrograms }: { initialPrograms: Program[] }
       });
   }, []);
 
+  if (programs.length === 0) {
+    return (
+      <Container className="py-16">
+        <p className="text-center text-muted">لا توجد برامج متاحة حالياً.</p>
+      </Container>
+    );
+  }
+
   return (
     <Container className="grid gap-6 py-16 sm:grid-cols-2 lg:grid-cols-3">
       {programs.map((program) => (

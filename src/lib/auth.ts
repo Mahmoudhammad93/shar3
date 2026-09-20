@@ -1,4 +1,9 @@
 import { getApiUrl } from "@/lib/api-url";
+import type {
+  LessonAudioPayload,
+  LessonBunnyPayload,
+  LessonMediaItem,
+} from "@/types/lesson-media";
 
 export interface StudentAuthState {
   id: number;
@@ -146,6 +151,56 @@ async function authFetch<T>(path: string, options: RequestInit = {}, { public: i
   return res.json();
 }
 
+/**
+ * Authenticated binary fetch for student audio/file endpoints.
+ * Uses Bearer token from the existing auth session — never puts tokens in query strings.
+ */
+export async function fetchAuthenticatedBlob(url: string): Promise<Blob> {
+  const token = getToken();
+  if (!token) {
+    throw new Error("يجب تسجيل الدخول للوصول إلى هذا الملف.");
+  }
+
+  let res: Response;
+  try {
+    res = await fetch(url, {
+      headers: {
+        Accept: "*/*",
+        Authorization: `Bearer ${token}`,
+      },
+    });
+  } catch {
+    throw new Error("تعذر تحميل الملف. تحقق من الاتصال.");
+  }
+
+  if (res.status === 401) {
+    clearToken();
+    throw new Error("انتهت الجلسة. يرجى تسجيل الدخول مرة أخرى.");
+  }
+
+  if (!res.ok) {
+    throw new Error("تعذر تحميل الملف حالياً.");
+  }
+
+  return res.blob();
+}
+
+export async function downloadAuthenticatedFile(url: string, filename: string): Promise<void> {
+  const blob = await fetchAuthenticatedBlob(url);
+  const objectUrl = URL.createObjectURL(blob);
+  try {
+    const anchor = document.createElement("a");
+    anchor.href = objectUrl;
+    anchor.download = filename || "download";
+    anchor.rel = "noopener";
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+  } finally {
+    URL.revokeObjectURL(objectUrl);
+  }
+}
+
 export const authApi = {
   register: async (data: RegisterPayload) => {
     const res = await authFetch<{
@@ -243,7 +298,15 @@ export const studentApi = {
 
   subject: (slug: string) =>
     authFetch<{
-      subject: CurriculumSubject & { id: number };
+      subject: {
+        id: number;
+        name_ar: string;
+        slug: string;
+        primary_text_ar?: string | null;
+        supplementary_text_ar?: string | null;
+        memorization_ar?: string | null;
+      };
+      /** May be null when Subject has no linked Course (AC-04 / AC-06). */
       course: {
         id: number;
         title_ar: string;
@@ -251,7 +314,7 @@ export const studentApi = {
         image?: string;
         description_ar?: string;
         teacher?: string;
-      };
+      } | null;
       progress: number;
       lessons: StudentLesson[];
     }>(`/student/subjects/${slug}`),
@@ -336,13 +399,21 @@ export interface StudentLesson {
   id: number;
   title_ar: string;
   content_ar?: string;
-  video_url?: string;
+  video_url?: string | null;
+  media_type?: string | null;
+  video_provider?: string | null;
+  bunny?: LessonBunnyPayload | null;
+  audio?: LessonAudioPayload | null;
+  /** Additive AC-M03 multi-media list. Prefer over video_url when present (including []). */
+  media?: LessonMediaItem[];
   duration_minutes?: number;
+  sort_order?: number;
   is_completed: boolean;
   progress_percent: number;
   quiz_passed?: boolean;
   has_quiz?: boolean;
   is_locked?: boolean;
+  owner_type?: string | null;
 }
 
 export interface ScheduleItem {
