@@ -13,8 +13,24 @@ function firstUnlockedLesson(lessons: StudentLesson[]): StudentLesson | null {
   return lessons.find((l) => !l.is_locked) || lessons[0] || null;
 }
 
-type LearningPayload = {
-  course: { id: number; title_ar: string; slug: string; image?: string; description_ar?: string; teacher?: string };
+export type LearningPayload = {
+  /** Present for Course learning; may be null for Subject-only / preparation. */
+  course: {
+    id: number;
+    title_ar: string;
+    slug: string;
+    image?: string;
+    description_ar?: string;
+    teacher?: string;
+  } | null;
+  subject?: {
+    id: number;
+    name_ar: string;
+    slug: string;
+    primary_text_ar?: string | null;
+    supplementary_text_ar?: string | null;
+    memorization_ar?: string | null;
+  } | null;
   progress: number;
   lessons: StudentLesson[];
 };
@@ -24,6 +40,9 @@ export function StudentLearningPage({
   subtitle,
   backHref = "/dashboard/courses",
   backLabel = "← العودة لموادي",
+  emptyMessage = "لم تتم إضافة دروس لهذا المقرر بعد.",
+  lessonListTitle = "دروس المادة",
+  progressLabel = "التقدم في المادة",
   load,
   reload,
 }: {
@@ -31,23 +50,30 @@ export function StudentLearningPage({
   subtitle?: string;
   backHref?: string;
   backLabel?: string;
+  emptyMessage?: string;
+  lessonListTitle?: string;
+  progressLabel?: string;
   load: () => Promise<LearningPayload>;
   reload: () => Promise<LearningPayload>;
 }) {
-  const [course, setCourse] = useState<(LearningPayload & { displayTitle: string }) | null>(null);
+  const [payload, setPayload] = useState<(LearningPayload & { displayTitle: string }) | null>(null);
   const [activeLesson, setActiveLesson] = useState<StudentLesson | null>(null);
   const [completing, setCompleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const progressSaveRef = useRef<Record<number, number>>({});
 
   useEffect(() => {
-    load().then((res) => {
-      setCourse({ ...res, displayTitle: title ?? res.course.title_ar });
-      const target =
-        res.lessons.find((l) => !l.is_completed && !l.is_locked) ||
-        firstUnlockedLesson(res.lessons);
-      setActiveLesson(target);
-    }).catch(console.error);
+    load()
+      .then((res) => {
+        const displayTitle =
+          title ?? res.subject?.name_ar ?? res.course?.title_ar ?? "المقرر";
+        setPayload({ ...res, displayTitle });
+        const target =
+          res.lessons.find((l) => !l.is_completed && !l.is_locked) ||
+          firstUnlockedLesson(res.lessons);
+        setActiveLesson(target);
+      })
+      .catch(console.error);
   }, [load, title]);
 
   const saveProgress = useCallback(async (lessonId: number, percent: number) => {
@@ -65,7 +91,7 @@ export function StudentLearningPage({
   }, []);
 
   async function handleQuizPassed(lessonId: number) {
-    setCourse((prev) => {
+    setPayload((prev) => {
       if (!prev) return prev;
       return {
         ...prev,
@@ -83,7 +109,9 @@ export function StudentLearningPage({
     try {
       await studentApi.completeLesson(lessonId);
       const updated = await reload();
-      setCourse({ ...updated, displayTitle: title ?? updated.course.title_ar });
+      const displayTitle =
+        title ?? updated.subject?.name_ar ?? updated.course?.title_ar ?? "المقرر";
+      setPayload({ ...updated, displayTitle });
       const current = updated.lessons.find((l) => l.id === lessonId) || null;
       setActiveLesson(current);
       const next = updated.lessons.find((l) => !l.is_completed && !l.is_locked);
@@ -97,7 +125,7 @@ export function StudentLearningPage({
     }
   }
 
-  if (!course) {
+  if (!payload) {
     return (
       <DashboardLayout>
         <p className="text-muted">جاري التحميل...</p>
@@ -105,14 +133,24 @@ export function StudentLearningPage({
     );
   }
 
+  const thumbnailSlug = payload.course?.slug ?? payload.subject?.slug ?? "subject";
+  const teacher = payload.course?.teacher;
+  const description =
+    payload.course?.description_ar ??
+    payload.subject?.primary_text_ar ??
+    undefined;
+
   return (
     <DashboardLayout>
-      <div className="relative mb-8 overflow-hidden rounded-2xl text-white" style={{ backgroundColor: "var(--brand-primary, #004d40)" }}>
+      <div
+        className="relative mb-8 overflow-hidden rounded-2xl text-white"
+        style={{ backgroundColor: "var(--brand-primary, #004d40)" }}
+      >
         <div className="grid md:grid-cols-[220px_1fr]">
           <CourseThumbnail
-            title={course.displayTitle}
-            slug={course.course.slug}
-            image={course.course.image}
+            title={payload.displayTitle}
+            slug={thumbnailSlug}
+            image={payload.course?.image}
             aspectClass="aspect-[16/10] md:aspect-auto md:min-h-full md:h-full"
             className="md:rounded-none"
           />
@@ -120,19 +158,19 @@ export function StudentLearningPage({
             <div className="islamic-pattern absolute inset-0 opacity-15" />
             <div className="relative">
               <p className="text-sm text-white/70">{subtitle ?? "دروس المادة"}</p>
-              <h1 className="mt-1 text-2xl font-bold md:text-3xl">{course.displayTitle}</h1>
-              {course.course.teacher && (
-                <p className="mt-2 text-sm text-white/75">المعلم: {course.course.teacher}</p>
+              <h1 className="mt-1 text-2xl font-bold md:text-3xl">{payload.displayTitle}</h1>
+              {teacher && (
+                <p className="mt-2 text-sm text-white/75">المعلم: {teacher}</p>
               )}
-              {course.course.description_ar && (
-                <p className="mt-3 max-w-2xl text-sm leading-7 text-white/70">{course.course.description_ar}</p>
+              {description && (
+                <p className="mt-3 max-w-2xl text-sm leading-7 text-white/70">{description}</p>
               )}
               <div className="mt-5 max-w-md">
                 <div className="mb-2 flex justify-between text-xs text-white/70">
-                  <span>التقدم في المادة</span>
-                  <span>{course.progress}%</span>
+                  <span>{progressLabel}</span>
+                  <span>{payload.progress}%</span>
                 </div>
-                <ProgressBar value={course.progress} className="h-2 bg-white/20" />
+                <ProgressBar value={payload.progress} className="h-2 bg-white/20" />
               </div>
               <Button href={backHref} variant="white" size="sm" className="mt-5">
                 {backLabel}
@@ -148,20 +186,20 @@ export function StudentLearningPage({
         </div>
       )}
 
-      {course.lessons.length === 0 ? (
+      {payload.lessons.length === 0 ? (
         <div className="card p-12 text-center text-muted">
-          <p>لا توجد دروس منشورة في هذه المادة بعد</p>
+          <p>{emptyMessage}</p>
           <Link href={backHref} className="mt-4 inline-block text-brand hover:underline">
-            العودة لموادي
+            {backLabel}
           </Link>
         </div>
       ) : (
         <LessonViewer
-          lessons={course.lessons}
+          lessons={payload.lessons}
           activeLesson={activeLesson}
           onSelectLesson={(lesson) => {
             if (lesson.is_locked) return;
-            const full = course.lessons.find((l) => l.id === lesson.id) ?? null;
+            const full = payload.lessons.find((l) => l.id === lesson.id) ?? null;
             setActiveLesson(full);
             setError(null);
           }}
@@ -169,7 +207,8 @@ export function StudentLearningPage({
           onProgressUpdate={saveProgress}
           onQuizPassed={handleQuizPassed}
           completing={completing}
-          progress={course.progress}
+          progress={payload.progress}
+          lessonListTitle={lessonListTitle}
         />
       )}
     </DashboardLayout>
