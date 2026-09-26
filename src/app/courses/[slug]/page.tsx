@@ -28,7 +28,7 @@ export async function generateMetadata({
     const { data: course } = await api.getCourse(slug);
     const description =
       course.description_ar ||
-      `دورة ${course.title_ar} في معهد علم شرعي — تعليم شرعي على منهج أهل السنة والجماعة.`;
+      `دورة ${course.title_ar} في معهد إعداد دعاة التوحيد والسنة — تعليم شرعي على منهج أهل السنة والجماعة.`;
 
     return buildMetadata({
       title: course.title_ar,

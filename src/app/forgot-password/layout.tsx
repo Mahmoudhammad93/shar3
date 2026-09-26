@@ -2,7 +2,7 @@ import { buildMetadata } from "@/lib/seo";
 
 export const metadata = buildMetadata({
   title: "استعادة كلمة المرور",
-  description: "استعد كلمة مرور حسابك في بوابة طلاب معهد علم شرعي.",
+  description: "استعد كلمة مرور حسابك في بوابة طلاب معهد إعداد دعاة التوحيد والسنة.",
   path: "/forgot-password/",
   noIndex: true,
 });

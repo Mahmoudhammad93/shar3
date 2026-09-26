@@ -6,9 +6,10 @@ import { SiteLayout } from "@/components/layout/site-layout";
 import { ProgramDetailCurriculum } from "@/components/programs/program-detail-curriculum";
 import { PageHero } from "@/components/sections/page-hero";
 import { Container } from "@/components/ui/container";
+import { JsonLd } from "@/components/seo/json-ld";
 import { api } from "@/lib/api";
 import { getProgramSlugs } from "@/lib/static-params";
-import { buildMetadata } from "@/lib/seo";
+import { breadcrumbJsonLd, buildMetadata, programJsonLd, SITE } from "@/lib/seo";
 
 export async function generateStaticParams() {
   const slugs = await getProgramSlugs();
@@ -28,7 +29,7 @@ export async function generateMetadata({
       title: program.name_ar,
       description:
         program.description_ar ||
-        `برنامج ${program.name_ar} في معهد علم شرعي — مسار تعليمي في العلوم الشرعية على منهج أهل السنة والجماعة.`,
+        `برنامج ${program.name_ar} في معهد إعداد دعاة التوحيد والسنة — مسار تعليمي في العلوم الشرعية على منهج أهل السنة والجماعة.`,
       path: `/programs/${slug}/`,
     });
   } catch {
@@ -44,6 +45,16 @@ export default async function ProgramDetailPage({ params }: { params: Promise<{ 
 
     return (
       <SiteLayout>
+        <JsonLd
+          data={[
+            programJsonLd(program),
+            breadcrumbJsonLd([
+              { name: SITE.name, path: "/" },
+              { name: "البرامج العلمية", path: "/programs/" },
+              { name: program.name_ar, path: `/programs/${slug}/` },
+            ]),
+          ]}
+        />
         <PageHero title={program.name_ar} subtitle={`${program.duration} • ${program.level}`} />
         <Container className="py-12">
           {program.description_ar && (

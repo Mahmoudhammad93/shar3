@@ -23,7 +23,7 @@ import "./dashboard-sidebar.css";
 
 export const DASHBOARD_SIDEBAR_WIDTH_PX = 300;
 
-const DEFAULT_INSTITUTE = { ar: "معهد علم شرعي", en: "Share3a Institute" };
+const DEFAULT_INSTITUTE = { ar: "معهد إعداد دعاة التوحيد والسنة", en: "Institute for Training Preachers of Tawhid and the Sunnah" };
 const DEFAULT_TAGLINE = { ar: "منارة للعلوم الشرعية", en: "A beacon of Islamic knowledge" };
 
 function NavLink({

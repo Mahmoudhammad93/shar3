@@ -21,9 +21,9 @@ const cairo = Cairo({
 
 export const metadata: Metadata = {
   ...buildMetadata({ path: "/" }),
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://shar3.chiefcoder.net"),
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://www.duaat-altawheed.com"),
   title: {
-    default: SITE.name,
+    default: `${SITE.name} | ${SITE.tagline}`,
     template: `%s | ${SITE.name}`,
   },
   applicationName: SITE.name,
@@ -61,7 +61,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
       <head>
         <style dangerouslySetInnerHTML={{ __html: siteThemeCssBlock(initialTheme) }} />
         {process.env.NODE_ENV === "production" ? <script src="/config.js" /> : null}
-        <JsonLd data={organizationJsonLd()} />
+        <JsonLd data={organizationJsonLd(initialSettings?.logo)} />
       </head>
       <body className="flex min-h-full flex-col bg-background text-foreground antialiased">
         <SiteFavicon />

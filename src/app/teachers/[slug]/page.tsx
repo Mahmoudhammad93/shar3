@@ -6,9 +6,10 @@ import { SiteLayout } from "@/components/layout/site-layout";
 import { CourseCard } from "@/components/cards/course-card";
 import { PageHero } from "@/components/sections/page-hero";
 import { Container } from "@/components/ui/container";
+import { JsonLd } from "@/components/seo/json-ld";
 import { api } from "@/lib/api";
 import { getTeacherSlugs } from "@/lib/static-params";
-import { buildMetadata } from "@/lib/seo";
+import { breadcrumbJsonLd, buildMetadata, personJsonLd, SITE } from "@/lib/seo";
 
 export async function generateStaticParams() {
   const slugs = await getTeacherSlugs();
@@ -26,7 +27,7 @@ export async function generateMetadata({
     const { data: teacher } = await api.getTeacher(slug);
     const description =
       teacher.bio_ar ||
-      `${teacher.name_ar}${teacher.title_ar ? ` — ${teacher.title_ar}` : ""} — معلم في معهد علم شرعي، متخصص في العلوم الشرعية.`;
+      `${teacher.name_ar}${teacher.title_ar ? ` — ${teacher.title_ar}` : ""} — معلم في معهد إعداد دعاة التوحيد والسنة، متخصص في العلوم الشرعية.`;
 
     return buildMetadata({
       title: teacher.name_ar,
@@ -47,6 +48,16 @@ export default async function TeacherDetailPage({ params }: { params: Promise<{ 
 
     return (
       <SiteLayout>
+        <JsonLd
+          data={[
+            personJsonLd(teacher),
+            breadcrumbJsonLd([
+              { name: SITE.name, path: "/" },
+              { name: "المعلمون", path: "/teachers/" },
+              { name: teacher.name_ar, path: `/teachers/${slug}/` },
+            ]),
+          ]}
+        />
         <PageHero title={teacher.name_ar} subtitle={teacher.title_ar}>
           {teacher.specializations && (
             <p className="mt-2 text-sm text-gold">{teacher.specializations}</p>

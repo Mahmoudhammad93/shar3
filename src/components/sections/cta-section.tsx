@@ -21,7 +21,7 @@ export function CtaSection() {
               <p className="mx-auto mt-3 max-w-xl text-white/80">
                 {isLoggedIn
                   ? "انتقل إلى لوحة التحكم لمتابعة دوراتك وواجباتك"
-                  : "انضم إلى آلاف الطلاب في معهد علم شرعي واستفد من برامجنا الشرعية المتكاملة"}
+                  : "انضم إلى آلاف الطلاب في معهد إعداد دعاة التوحيد والسنة واستفد من برامجنا الشرعية المتكاملة"}
               </p>
               <div className="mt-8 flex flex-wrap justify-center gap-4">
                 {!loading && isLoggedIn ? (
