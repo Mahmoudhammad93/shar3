@@ -2,7 +2,7 @@ import { buildMetadata } from "@/lib/seo";
 
 export const metadata = buildMetadata({
   title: "تسجيل الدخول",
-  description: "سجّل دخولك إلى بوابة طلاب معهد علم شرعي لمتابعة دوراتك الشرعية وواجباتك الدراسية.",
+  description: "سجّل دخولك إلى بوابة طلاب معهد إعداد دعاة التوحيد والسنة لمتابعة دوراتك الشرعية وواجباتك الدراسية.",
   path: "/login/",
   noIndex: true,
 });

@@ -5,7 +5,7 @@ import { SiteLogoMark } from "@/components/layout/site-logo";
 import { useLocale } from "@/components/providers/locale-provider";
 import { useDashboardTheme } from "@/components/providers/dashboard-theme-provider";
 
-const DEFAULT_INSTITUTE = { ar: "معهد علم شرعي", en: "Share3a Institute" };
+const DEFAULT_INSTITUTE = { ar: "معهد إعداد دعاة التوحيد والسنة", en: "Institute for Training Preachers of Tawhid and the Sunnah" };
 
 export function DashboardMobileHeader({ onOpenMenu }: { onOpenMenu: () => void }) {
   const { locale } = useLocale();
