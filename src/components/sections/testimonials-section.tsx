@@ -14,7 +14,7 @@ export function TestimonialsSection({ testimonials }: { testimonials: Testimonia
       <SectionHeader
         eyebrow="آراء الطلاب"
         title="ماذا يقول طلابنا"
-        description="تجارب حقيقية من رحلة طلب العلم الشرعي في معهد علم شرعي"
+        description="تجارب حقيقية من رحلة طلب العلم الشرعي في معهد إعداد دعاة التوحيد والسنة"
       />
       <Container>
         <StaggerContainer className="grid gap-6 md:grid-cols-2">

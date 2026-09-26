@@ -10,12 +10,17 @@ import { SearchSection } from "@/components/sections/search-section";
 import { TeachersSection } from "@/components/sections/teachers-section";
 import { TestimonialsSection } from "@/components/sections/testimonials-section";
 import { api } from "@/lib/api";
-import { buildMetadata, websiteJsonLd } from "@/lib/seo";
+import { buildMetadata, faqJsonLd, SITE, websiteJsonLd } from "@/lib/seo";
 
 export const metadata = buildMetadata({
-  description:
-    "معهد علم شرعي يقدّم دورات وبرامج في القرآن والتفسير والفقه والحديث والعقيدة على منهج أهل السنة والجماعة. سجّل الآن وابدأ رحلتك في طلب العلم الشرعي.",
+  description: `${SITE.name} يقدّم برامج ودورات في التوحيد والتفسير والفقه والحديث على منهج السلف. سجّل الآن وابدأ رحلتك في طلب العلم الشرعي وإعداد الدعاة.`,
   path: "/",
+  keywords: [
+    ...SITE.keywords,
+    "تسجيل معهد دعاة التوحيد",
+    "دورات توحيد مجانية",
+    "إعداد دعاة أونلاين",
+  ],
 });
 
 export default async function HomePage() {
@@ -26,10 +31,11 @@ export default async function HomePage() {
   const teachers = data.teachers ?? [];
   const testimonials = data.testimonials ?? [];
   const faqs = data.faqs ?? [];
+  const faqSchema = faqJsonLd(faqs);
 
   return (
     <SiteLayout>
-      <JsonLd data={websiteJsonLd()} />
+      <JsonLd data={[websiteJsonLd(), ...(faqSchema ? [faqSchema] : [])]} />
       <HeroSection slide={heroSlides[0]} />
       <InstituteIntroSection />
       <SearchSection />

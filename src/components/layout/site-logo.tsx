@@ -19,11 +19,13 @@ export function SiteLogoMark({
   size = "md",
   variant = "brand",
   className,
+  alt = "معهد إعداد دعاة التوحيد والسنة",
 }: {
   logoUrl?: string | null;
   size?: keyof typeof sizes;
   variant?: "brand" | "dark" | "light";
   className?: string;
+  alt?: string;
 }) {
   const [failed, setFailed] = useState(false);
   const s = sizes[size];
@@ -53,7 +55,7 @@ export function SiteLogoMark({
         // eslint-disable-next-line @next/next/no-img-element
         <img
           src={logoUrl}
-          alt=""
+          alt={alt}
           className="h-full w-full object-contain object-center"
           onError={() => setFailed(true)}
         />
@@ -92,7 +94,14 @@ export function SiteLogo({
 
   const content = (
     <>
-      {shouldShowMark && <SiteLogoMark logoUrl={logoUrl} size={size} variant={variant} />}
+      {shouldShowMark && (
+        <SiteLogoMark
+          logoUrl={logoUrl}
+          size={size}
+          variant={variant}
+          alt={settings?.site_name_ar || "معهد إعداد دعاة التوحيد والسنة"}
+        />
+      )}
       {shouldShowText && (
         <div className={cn("shrink-0", textClassName)}>
           <p
@@ -102,7 +111,7 @@ export function SiteLogo({
               variant === "dark" ? "text-white" : "text-brand",
             )}
           >
-            {settings?.site_name_ar || "معهد علم شرعي"}
+            {settings?.site_name_ar || "معهد إعداد دعاة التوحيد والسنة"}
           </p>
           {size !== "sm" && (
             <p

@@ -27,7 +27,7 @@ export function AuthLayout({
             variant="dark"
             className="mx-auto mb-8 shadow-lg"
           />
-          <h1 className="text-3xl font-bold">{settings?.site_name_ar || "معهد علم شرعي"}</h1>
+          <h1 className="text-3xl font-bold">{settings?.site_name_ar || "معهد إعداد دعاة التوحيد والسنة"}</h1>
           <p className="mx-auto mt-4 max-w-sm leading-8 text-white/80">
             {settings?.tagline_ar || "منارة للعلوم الشرعية — طلب العلم فريضة على كل مسلم"}
           </p>

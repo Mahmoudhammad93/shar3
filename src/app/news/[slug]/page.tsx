@@ -26,7 +26,7 @@ export async function generateMetadata({
 
     return buildMetadata({
       title: announcement.title_ar,
-      description: plainContent || `إعلان من معهد علم شرعي: ${announcement.title_ar}`,
+      description: plainContent || `إعلان من معهد إعداد دعاة التوحيد والسنة: ${announcement.title_ar}`,
       path: `/news/${slug}/`,
       type: "article",
     });
